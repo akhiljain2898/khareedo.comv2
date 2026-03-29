@@ -1,10 +1,5 @@
-[build]
-builder = "nixpacks"
+[services.api]
+startCommand = "uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
-[[services]]
-name = "api"
-startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
-
-[[services]]
-name = "worker"
+[services.worker]
 startCommand = "python -m worker.main"

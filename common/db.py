@@ -4,7 +4,7 @@ Postgres connection + all read/write helpers.
 Shared by both the API service and the worker service.
 """
 
-import psycopg2
+import psycopg as psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
 from common.config import DATABASE_URL

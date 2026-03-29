@@ -4,14 +4,16 @@ POST /api/initiate-payment
 
 Flow:
 1. Validate product name (regex)
-2. Create Razorpay order
+2. Create Razorpay order via direct HTTP (no SDK — avoids pkg_resources
+   incompatibility with Python 3.13)
 3. Write pending row to Postgres
-4. Return Razorpay payment URL to frontend
+4. Return Razorpay order details to frontend
 """
 
 import re
+import base64
 import logging
-import razorpay
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 from common.config import RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, APP_BASE_URL
@@ -26,7 +28,18 @@ QUERY_REGEX = re.compile(r'^[a-zA-Z0-9\s\-]{3,100}$')
 # ₹99 in paise (Razorpay uses smallest currency unit)
 AMOUNT_PAISE = 9900
 
-_razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+# Razorpay Orders API endpoint
+RAZORPAY_ORDERS_URL = "https://api.razorpay.com/v1/orders"
+
+
+def _razorpay_auth() -> str:
+    """
+    Razorpay uses HTTP Basic Auth.
+    Encode key_id:key_secret as base64.
+    """
+    credentials = f"{RAZORPAY_KEY_ID}:{RAZORPAY_KEY_SECRET}"
+    encoded = base64.b64encode(credentials.encode()).decode()
+    return f"Basic {encoded}"
 
 
 class InitiatePaymentRequest(BaseModel):
@@ -44,22 +57,35 @@ class InitiatePaymentRequest(BaseModel):
 @router.post("/api/initiate-payment")
 async def initiate_payment(body: InitiatePaymentRequest):
     """
-    Creates a Razorpay order and a pending row in Postgres.
-    Returns the payment_url for frontend redirect.
+    Creates a Razorpay order via direct HTTP POST.
+    Returns order details for frontend Razorpay JS SDK checkout.
     """
     query = body.query
 
-    # Create Razorpay order
+    # Create Razorpay order via direct HTTP — no SDK needed
     try:
-        order = _razorpay_client.order.create({
-            "amount": AMOUNT_PAISE,
-            "currency": "INR",
-            "payment_capture": 1,  # Auto-capture on payment
-            "notes": {
-                "query": query,
-                "product": "khareedo",
-            }
-        })
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                RAZORPAY_ORDERS_URL,
+                headers={
+                    "Authorization": _razorpay_auth(),
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "amount": AMOUNT_PAISE,
+                    "currency": "INR",
+                    "payment_capture": 1,
+                    "notes": {
+                        "query": query,
+                        "product": "khareedo",
+                    }
+                }
+            )
+        response.raise_for_status()
+        order = response.json()
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Razorpay order creation failed: {e.response.status_code} {e.response.text}")
+        raise HTTPException(status_code=502, detail="Payment gateway error")
     except Exception as e:
         logger.error(f"Razorpay order creation failed: {e}")
         raise HTTPException(status_code=502, detail="Payment gateway error")
@@ -75,14 +101,23 @@ async def initiate_payment(body: InitiatePaymentRequest):
 
     logger.info(f"Order created: {order_id} for query='{query}'")
 
-    # Return order details — the frontend uses Razorpay's JS SDK to open
-    # the checkout modal directly (see index.html script block).
-    # We return the order_id, key_id, amount, and callback URL.
+    # Return order details — frontend uses Razorpay JS SDK to open
+    # checkout modal directly (see index.html script block).
     return {
-        "order_id":   order_id,
-        "key_id":     RAZORPAY_KEY_ID,
-        "amount":     AMOUNT_PAISE,
-        "currency":   "INR",
+        "order_id":     order_id,
+        "key_id":       RAZORPAY_KEY_ID,
+        "amount":       AMOUNT_PAISE,
+        "currency":     "INR",
         "callback_url": f"{APP_BASE_URL}/result?id={order_id}",
-        "query":      query,
+        "query":        query,
     }
+```
+
+---
+
+**Then push:**
+```
+cd ~/Desktop/khareedo
+git add api/routes/payment.py requirements.txt
+git commit -m "fix: replace razorpay SDK with direct httpx call - Python 3.13 compat"
+git push

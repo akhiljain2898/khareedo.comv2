@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Your supplier list — khareedo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:        #1a2e4a;
+    --ink-soft:   #4a5e74;
+    --ink-muted:  #8a9ab0;
+    --paper:      #ffffff;
+    --paper-warm: #f0f6ff;
+    --rule:       #e8eef6;
+    --blue:       #6B9FE4;
+    --blue-dark:  #4A80D4;
+    --accent:     #C8410B;
+    --success:    #1A6B4A;
+    --font-body:  'Inter', Arial, sans-serif;
+    --radius:     8px;
+    --radius-lg:  14px;
+    --shadow:     0 1px 4px rgba(107,159,228,0.08), 0 4px 20px rgba(107,159,228,0.08);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .shell { min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  header {
+    width: 100%;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+  }
+  .logo {
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 560px;
+    padding: 4rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .status-card {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+
+  .status-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+
+  .status-card h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .status-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.65;
+  }
+
+  /* spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--rule);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 1.5rem;
+  }
+
+  /* progress label pulse */
+  @keyframes fadepulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+  .progress-label {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+    animation: fadepulse 2.4s ease-in-out infinite;
+  }
+
+  .result-badge {
+    display: inline-block;
+    background: var(--paper-warm);
+    border: 1.5px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 0.45rem 1rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.75rem;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: #a83409;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(200,65,11,0.25);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--rule);
+  }
+  .btn-outline:hover { border-color: var(--blue); }
+
+  .expiry-note {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 0.75rem;
+  }
+
+  .order-id {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-family: monospace;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .highlight-box {
+    background: var(--paper-warm);
+    border-left: 4px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    margin: 1rem 0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    line-height: 1.65;
+    text-align: left;
+  }
+  .highlight-box a { color: var(--blue); text-decoration: none; }
+  .highlight-box a:hover { text-decoration: underline; }
+  .highlight-box strong { color: var(--ink); }
+
+  footer {
+    width: 100%;
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 13px;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  footer a { color: var(--ink-soft); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    main { padding: 2rem 1rem; }
+    .status-card { padding: 2rem 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <a href="/" class="logo">khareedo</a>
+  </header>
+
+  <main>
+    <div class="status-card">
+
+      <!-- PROCESSING -->
+      <div id="state-processing">
+        <div class="spinner"></div>
+        <h2>Finding your suppliers…</h2>
+        <p>We're searching company websites and extracting verified contacts. This takes up to 90 seconds.</p>
+        <div class="progress-label" id="progress-label">Searching the web…</div>
+      </div>
+
+      <!-- DONE -->
+      <div id="state-done" style="display:none;">
+        <span class="status-icon">✅</span>
+        <h2>Your supplier list is ready</h2>
+        <p>We found verified contacts for your query. Download within 30 minutes.</p>
+        <div class="result-badge" id="result-count-badge"></div>
+        <br/>
+        <a href="#" class="btn btn-primary" id="download-btn">Download Excel →</a>
+        <p class="expiry-note">⚠ Download link expires in <span id="countdown">30:00</span></p>
+        <div class="order-id" id="order-id-done"></div>
+      </div>
+
+      <!-- PARTIAL -->
+      <div id="state-partial" style="display:none;">
+        <span class="status-icon">⚠️</span>
+        <h2>Partial results available</h2>
+        <p>We found fewer verified suppliers than expected for this query. You can download what's available.</p>
+        <div class="result-badge" id="partial-count-badge"></div>
+        <br/>
+        <a href="#" class="btn btn-primary" id="download-btn-partial" style="margin-bottom:0.75rem;">Download Excel →</a>
+        <br/><br/>
+        <div class="highlight-box">
+          Need more results? Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
+          with your Order ID and we'll assist you.
+        </div>
+        <div class="order-id" id="order-id-partial"></div>
+      </div>
+
+      <!-- FAILED -->
+      <div id="state-failed" style="display:none;">
+        <span class="status-icon">❌</span>
+        <h2>Not enough results found</h2>
+        <p>Our search didn't return enough verified supplier contacts for this product. You are entitled to a full refund.</p>
+        <div class="highlight-box">
+          Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
+          with your Order ID and we will process your refund promptly — no questions asked.
+        </div>
+        <div class="order-id" id="order-id-failed"></div>
+      </div>
+
+      <!-- ERROR -->
+      <div id="state-error" style="display:none;">
+        <span class="status-icon">⚠️</span>
+        <h2>Something went wrong</h2>
+        <p>There was a technical error processing your request.</p>
+        <div class="highlight-box">
+          Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
+          with your Order ID and we will resolve this and issue a refund if needed.
+        </div>
+        <div class="order-id" id="order-id-error"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
+      <span style="font-weight:700;">khareedo</span>
+      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    </div>
+  </footer>
+
+</div>
+<script>
+  const params  = new URLSearchParams(window.location.search);
+  const orderId = params.get('id');
+  let pollTimer, countdownTimer, secondsLeft = 30 * 60;
+
+  const msgs = [
+    'Searching the web…',
+    'Scraping company websites…',
+    'Extracting contact details…',
+    'Verifying supplier information…',
+    'Building your Excel file…',
+  ];
+  let msgIdx = 0;
+
+  function show(name) {
+    ['processing','done','partial','failed','error'].forEach(s => {
+      document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
+    });
+  }
+
+  function startCountdown() {
+    countdownTimer = setInterval(() => {
+      secondsLeft--;
+      const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+      const s = String(secondsLeft % 60).padStart(2, '0');
+      const el = document.getElementById('countdown');
+      if (el) el.textContent = m + ':' + s;
+      if (secondsLeft <= 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
+
+  function rotateMsgs() {
+    const el = document.getElementById('progress-label');
+    if (el) {
+      msgIdx = (msgIdx + 1) % msgs.length;
+      el.textContent = msgs[msgIdx];
+    }
+  }
+
+  function poll() {
+    if (!orderId) { show('error'); return; }
+    fetch('/api/job-status?id=' + encodeURIComponent(orderId))
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'done') {
+          clearInterval(pollTimer);
+          show('done');
+          document.getElementById('result-count-badge').textContent = (data.result_count || '?') + ' verified suppliers found';
+          document.getElementById('download-btn').href = '/api/download?id=' + encodeURIComponent(orderId);
+          document.getElementById('order-id-done').textContent = 'Order ID: ' + orderId;
+          startCountdown();
+        } else if (data.status === 'partial') {
+          clearInterval(pollTimer);
+          show('partial');
+          document.getElementById('partial-count-badge').textContent = (data.result_count || '?') + ' suppliers found';
+          document.getElementById('download-btn-partial').href = '/api/download?id=' + encodeURIComponent(orderId);
+          document.getElementById('order-id-partial').textContent = 'Order ID: ' + orderId;
+        } else if (data.status === 'failed') {
+          clearInterval(pollTimer);
+          show('failed');
+          document.getElementById('order-id-failed').textContent = 'Order ID: ' + orderId;
+        } else if (data.status === 'processing' || data.status === 'pending') {
+          // keep polling
+        } else {
+          clearInterval(pollTimer);
+          show('error');
+          document.getElementById('order-id-error').textContent = 'Order ID: ' + orderId;
+        }
+      })
+      .catch(() => { /* transient error — keep polling */ });
+  }
+
+  if (!orderId) {
+    show('error');
+  } else {
+    show('processing');
+    setInterval(rotateMsgs, 4000);
+    poll();
+    pollTimer = setInterval(poll, 2000);
+  }
+</script>
+</body>
+</html>

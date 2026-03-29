@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>khareedo — Find verified suppliers in 90 seconds</title>
+<meta name="description" content="Type a product name, pay ₹99, get a verified supplier list with contacts in 90 seconds. No login. No subscription."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:        #1a2e4a;
+    --ink-soft:   #4a5e74;
+    --ink-muted:  #8a9ab0;
+    --paper:      #ffffff;
+    --paper-warm: #f0f6ff;
+    --rule:       #e8eef6;
+    --blue:       #6B9FE4;
+    --blue-dark:  #4A80D4;
+    --blue-light: #e8f0fc;
+    --accent:     #C8410B;
+    --accent-2:   #1A6B4A;
+    --warning:    #E8A020;
+    --font-head:  'Inter', Arial, sans-serif;
+    --font-body:  'Inter', Arial, sans-serif;
+    --radius:     8px;
+    --radius-lg:  14px;
+    --shadow:     0 1px 4px rgba(107,159,228,0.08), 0 4px 20px rgba(107,159,228,0.08);
+    --shadow-lg:  0 8px 40px rgba(107,159,228,0.14);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 860px;
+    padding: 3rem 2rem 4rem;
+  }
+
+  /* ── HERO ── */
+  .page-title {
+    font-family: var(--font-head);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .page-title .line-big {
+    display: block;
+    font-size: clamp(2.75rem, 6.5vw, 4.25rem);
+  }
+
+  .page-title .line-small {
+    display: block;
+    font-size: clamp(2.1rem, 5vw, 3.25rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  .page-title em {
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .page-subtitle {
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+    max-width: 560px;
+    margin: 1rem auto 0;
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* ── PILL BADGE ── */
+  .pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1.5px solid var(--blue);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--blue);
+    margin: 1.25rem auto 0;
+    width: fit-content;
+  }
+
+  .pill-badge .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34c97a;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* ── WARNING BANNER ── */
+  .warning-banner {
+    background: #fff8ec;
+    border: 1px solid #f0c060;
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 13px;
+    color: var(--ink);
+    margin: 2rem 0 1.5rem;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    line-height: 1.55;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-top: 1.5rem;
+  }
+
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── FORM FIELDS ── */
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.5rem;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.85rem;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(107,159,228,0.12);
+  }
+
+  input[type="text"]::placeholder {
+    color: var(--ink-muted);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 0.4rem;
+    min-height: 18px;
+  }
+
+  /* ── HIGHLIGHT / INFO BOX ── */
+  .highlight-box {
+    background: var(--paper-warm);
+    border-left: 4px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    margin: 1.25rem 0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+
+  .highlight-box strong {
+    color: var(--ink);
+  }
+
+  /* ── TERMS ROW ── */
+  .terms-row {
+    background: var(--paper-warm);
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    cursor: pointer;
+  }
+
+  .terms-row input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--blue);
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .terms-row a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .terms-row a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    text-align: center;
+    margin-top: 1.25rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.75rem;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #a83409;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(200,65,11,0.25);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-disabled {
+    background: #b0bec5;
+    color: #fff;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-note {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 0.6rem;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+    text-align: center;
+  }
+
+  .how-item .icon {
+    font-size: 1.75rem;
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+
+  .how-item h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .how-item p {
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.55;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    width: 100%;
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 13px;
+    text-align: center;
+    padding: 1.5rem;
+  }
+
+  footer .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  footer .logo { font-size: 13px; }
+  footer a { color: var(--ink-soft); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    main { padding: 2rem 1rem 3rem; }
+    .how-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .page-title .line-big { font-size: 2.4rem; }
+    .page-title .line-small { font-size: 1.9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <a href="/" class="logo">khareedo</a>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <div style="text-align:center; padding-bottom: 0.5rem;">
+      <h1 class="page-title">
+        <span class="line-big">Stop searching for suppliers.</span>
+        <span class="line-small"><em>Get a verified list in 90 seconds.</em></span>
+      </h1>
+
+      <div class="pill-badge">
+        <span class="dot"></span>
+        Pay per search &nbsp;·&nbsp; No login &nbsp;·&nbsp; No subscription
+      </div>
+
+      <p class="page-subtitle">
+        Type a product name, pay ₹99, and receive a ready-to-use Excel file with
+        verified supplier names, phones, emails, and addresses — sourced directly
+        from company websites across India.
+      </p>
+    </div>
+
+    <!-- INPUT CARD -->
+    <div class="card">
+      <div class="card-title">
+        <span class="num">01</span>
+        What are you looking for?
+      </div>
+
+      <label for="product-input">Product or material name</label>
+      <input
+        type="text"
+        id="product-input"
+        placeholder="e.g. hydraulic pump, wheat gluten, safety gloves"
+        maxlength="100"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div class="field-error" id="field-error"></div>
+
+      <div class="highlight-box" style="margin-top: 1.25rem;">
+        <strong>What you get:</strong> Up to 15 verified supplier contacts extracted directly
+        from company websites — company name, phone, email, address, and product description.
+        Single-tab Excel file, ready to use.
+      </div>
+
+      <label class="terms-row" for="consent-check">
+        <input type="checkbox" id="consent-check"/>
+        <span>
+          I have read and agree to the
+          <a href="/terms" target="_blank">Terms of Service</a>,
+          <a href="/refund-policy" target="_blank">Refund Policy</a>
+          and
+          <a href="/privacy-policy" target="_blank">Privacy Policy</a>
+        </span>
+      </label>
+
+      <div class="btn-row">
+        <button class="btn btn-disabled" id="proceed-btn" disabled>
+          Get Supplier List — ₹99 →
+        </button>
+        <p class="btn-note">Secure payment via Razorpay · Results in ~90 seconds</p>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="how-grid">
+      <div class="how-item">
+        <span class="icon">🔍</span>
+        <h3>Type a product</h3>
+        <p>Any raw material, component, or finished good sourced in India</p>
+      </div>
+      <div class="how-item">
+        <span class="icon">💳</span>
+        <h3>Pay ₹99</h3>
+        <p>Secure checkout via Razorpay. UPI, cards, net banking accepted.</p>
+      </div>
+      <div class="how-item">
+        <span class="icon">📥</span>
+        <h3>Download Excel</h3>
+        <p>Up to 15 complete, verified supplier contacts — ready to use</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span class="logo" style="font-weight:700;">khareedo</span>
+      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    </div>
+  </footer>
+
+</div>
+<script>
+  const input  = document.getElementById('product-input');
+  const btn    = document.getElementById('proceed-btn');
+  const check  = document.getElementById('consent-check');
+  const errEl  = document.getElementById('field-error');
+  const REGEX  = /^[a-zA-Z0-9\s\-]{3,100}$/;
+
+  function sync() {
+    const val   = input.value.trim();
+    const valid = REGEX.test(val);
+    const ready = valid && check.checked;
+    btn.disabled = !ready;
+    btn.className = 'btn ' + (ready ? 'btn-primary' : 'btn-disabled');
+    errEl.textContent = val.length > 0 && !valid
+      ? 'Only letters, numbers, spaces and hyphens allowed (3–100 chars).'
+      : '';
+  }
+
+  input.addEventListener('input', sync);
+  check.addEventListener('change', sync);
+
+  btn.addEventListener('click', function () {
+    const val = input.value.trim();
+    if (!REGEX.test(val) || !check.checked) return;
+    btn.textContent = 'Opening payment…';
+    btn.disabled = true;
+    btn.className = 'btn btn-disabled';
+
+    fetch('/api/initiate-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: val })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.order_id) {
+        errEl.textContent = 'Something went wrong. Please try again.';
+        sync(); return;
+      }
+      // Open Razorpay checkout modal
+      const rzp = new Razorpay({
+        key:         data.key_id,
+        amount:      data.amount,
+        currency:    data.currency,
+        order_id:    data.order_id,
+        name:        'khareedo',
+        description: 'Supplier list: ' + data.query,
+        theme:       { color: '#1a2e4a' },
+        handler: function() {
+          // Payment confirmed — go to result page
+          window.location.href = data.callback_url;
+        },
+        modal: {
+          ondismiss: function() {
+            btn.textContent = 'Get Supplier List — ₹99 →';
+            sync();
+          }
+        }
+      });
+      rzp.on('payment.failed', function() {
+        errEl.textContent = 'Payment failed. Please try again.';
+        sync();
+      });
+      rzp.open();
+    })
+    .catch(() => {
+      errEl.textContent = 'Network error. Please try again.';
+      sync();
+    });
+  });
+</script>
+</body>
+</html>

@@ -3,205 +3,186 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Your supplier list — khareedo</title>
+<title>Your supplier list | vendordhundo.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --ink:        #1a2e4a;
-    --ink-soft:   #4a5e74;
-    --ink-muted:  #8a9ab0;
-    --paper:      #ffffff;
-    --paper-warm: #f0f6ff;
-    --rule:       #e8eef6;
-    --blue:       #6B9FE4;
-    --blue-dark:  #4A80D4;
-    --accent:     #C8410B;
-    --success:    #1A6B4A;
-    --font-body:  'Inter', Arial, sans-serif;
-    --radius:     8px;
-    --radius-lg:  14px;
-    --shadow:     0 1px 4px rgba(107,159,228,0.08), 0 4px 20px rgba(107,159,228,0.08);
+    --navy:        #1a2340;
+    --blue-accent: #4a6cf7;
+    --blue-soft:   #f0f4ff;
+    --blue-light:  #e8eeff;
+    --text-body:   #475569;
+    --text-muted:  #94a3b8;
+    --white:       #ffffff;
+    --border:      #e2e8f0;
+    --shadow-md:   0 4px 24px rgba(26,35,64,0.10);
+    --green:       #22c55e;
   }
+
   html { scroll-behavior: smooth; }
+
   body {
-    font-family: var(--font-body);
-    background: var(--paper);
-    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--navy);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
     font-size: 15px;
     line-height: 1.6;
   }
+
   .shell { min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
   header {
     width: 100%;
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-    padding: 0 2rem;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
     height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+    display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-family: var(--font-body);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -0.02em;
+    font-size: 1.2rem; font-weight: 800;
+    color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
+  .logo span { color: var(--blue-accent); }
 
   main {
     flex: 1;
     width: 100%;
     max-width: 560px;
-    padding: 4rem 2rem;
+    padding: 4rem 1.5rem;
     display: flex;
     align-items: flex-start;
     justify-content: center;
   }
 
+  /* Card matches index.html card style exactly */
   .status-card {
     width: 100%;
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-lg);
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     padding: 2.5rem 2rem;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
     text-align: center;
   }
 
   .status-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
 
   .status-card h2 {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.5rem;
+    font-size: 1.25rem; font-weight: 700;
+    color: var(--navy); margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
   }
 
   .status-card p {
-    font-size: 14px;
-    color: var(--ink-muted);
-    margin-bottom: 1.5rem;
-    line-height: 1.65;
+    font-size: 14px; color: var(--text-muted);
+    margin-bottom: 1.5rem; line-height: 1.65;
   }
 
-  /* spinner */
+  /* Spinner: unchanged logic, updated colours */
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
     width: 40px; height: 40px;
-    border: 3px solid var(--rule);
-    border-top-color: var(--blue);
+    border: 3px solid var(--border);
+    border-top-color: var(--blue-accent);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     margin: 0 auto 1.5rem;
   }
 
-  /* progress label pulse */
   @keyframes fadepulse { 0%,100%{opacity:.5} 50%{opacity:1} }
   .progress-label {
-    font-size: 13px;
-    color: var(--ink-muted);
-    margin-top: -0.75rem;
-    margin-bottom: 1.5rem;
+    font-size: 13px; color: var(--text-muted);
+    margin-top: -0.75rem; margin-bottom: 1.5rem;
     animation: fadepulse 2.4s ease-in-out infinite;
   }
 
   .result-badge {
     display: inline-block;
-    background: var(--paper-warm);
-    border: 1.5px solid var(--blue);
-    border-radius: var(--radius);
+    background: var(--blue-soft);
+    border: 1px solid var(--blue-light);
+    border-radius: 8px;
     padding: 0.45rem 1rem;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink);
+    font-size: 13px; font-weight: 600;
+    color: var(--navy);
     margin-bottom: 1.5rem;
   }
 
+  /* Button matches index.html btn-primary */
   .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.7rem 1.75rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.8rem 1.75rem;
     border-radius: 10px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none;
     transition: all 0.15s;
     text-decoration: none;
+    letter-spacing: 0.01em;
   }
-
   .btn-primary {
-    background: var(--accent);
-    color: #fff;
+    background: var(--blue-accent); color: var(--white);
+    box-shadow: 0 4px 16px rgba(74,108,247,0.3);
   }
-  .btn-primary:hover {
-    background: #a83409;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(200,65,11,0.25);
-  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,108,247,0.4); }
+  .btn-primary:active { transform: scale(0.98); }
 
   .btn-outline {
-    background: transparent;
-    color: var(--ink);
-    border: 1.5px solid var(--rule);
+    background: transparent; color: var(--navy);
+    border: 1.5px solid var(--border);
   }
-  .btn-outline:hover { border-color: var(--blue); }
+  .btn-outline:hover { border-color: var(--blue-accent); color: var(--blue-accent); }
 
   .expiry-note {
-    font-size: 12px;
-    color: var(--ink-muted);
+    font-size: 12px; color: var(--text-muted);
     margin-top: 0.75rem;
   }
 
   .order-id {
-    font-size: 12px;
-    color: var(--ink-muted);
+    font-size: 12px; color: var(--text-muted);
     font-family: monospace;
-    margin-top: 1.25rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--rule);
+    margin-top: 1.25rem; padding-top: 1rem;
+    border-top: 1px solid var(--border);
   }
 
+  /* Highlight box matches index.html */
   .highlight-box {
-    background: var(--paper-warm);
-    border-left: 4px solid var(--blue);
-    border-radius: var(--radius);
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue-accent);
+    border-radius: 8px;
     padding: 0.9rem 1.1rem;
     margin: 1rem 0;
-    color: var(--ink-soft);
-    font-size: 13.5px;
-    line-height: 1.65;
+    color: var(--text-body);
+    font-size: 13.5px; line-height: 1.65;
     text-align: left;
   }
-  .highlight-box a { color: var(--blue); text-decoration: none; }
+  .highlight-box a { color: var(--blue-accent); text-decoration: none; }
   .highlight-box a:hover { text-decoration: underline; }
-  .highlight-box strong { color: var(--ink); }
+  .highlight-box strong { color: var(--navy); }
 
   footer {
     width: 100%;
-    background: var(--paper);
-    border-top: 1px solid var(--rule);
-    color: var(--ink-soft);
-    font-size: 13px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
     text-align: center;
-    padding: 1.5rem;
   }
-  footer a { color: var(--ink-soft); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .footer-inner .logo { font-size: 12px; font-weight: 700; letter-spacing: -0.02em; }
+  .footer-inner a { color: var(--text-muted); text-decoration: none; }
+  .footer-inner a:hover { text-decoration: underline; }
 
   @media (max-width: 640px) {
     main { padding: 2rem 1rem; }
@@ -213,13 +194,13 @@
 <div class="shell">
 
   <header>
-    <a href="/" class="logo">khareedo</a>
+    <a href="/" class="logo">vendordhundo<span>.com</span></a>
   </header>
 
   <main>
     <div class="status-card">
 
-      <!-- PROCESSING -->
+      <!-- PROCESSING: logic unchanged -->
       <div id="state-processing">
         <div class="spinner"></div>
         <h2>Finding your suppliers…</h2>
@@ -227,7 +208,7 @@
         <div class="progress-label" id="progress-label">Searching the web…</div>
       </div>
 
-      <!-- DONE -->
+      <!-- DONE: logic unchanged -->
       <div id="state-done" style="display:none;">
         <span class="status-icon">✅</span>
         <h2>Your supplier list is ready</h2>
@@ -239,7 +220,7 @@
         <div class="order-id" id="order-id-done"></div>
       </div>
 
-      <!-- PARTIAL -->
+      <!-- PARTIAL: logic unchanged -->
       <div id="state-partial" style="display:none;">
         <span class="status-icon">⚠️</span>
         <h2>Partial results available</h2>
@@ -249,31 +230,31 @@
         <a href="#" class="btn btn-primary" id="download-btn-partial" style="margin-bottom:0.75rem;">Download Excel →</a>
         <br/><br/>
         <div class="highlight-box">
-          Need more results? Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
+          Need more results? Email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
           with your Order ID and we'll assist you.
         </div>
         <div class="order-id" id="order-id-partial"></div>
       </div>
 
-      <!-- FAILED -->
+      <!-- FAILED: logic unchanged -->
       <div id="state-failed" style="display:none;">
         <span class="status-icon">❌</span>
         <h2>Not enough results found</h2>
         <p>Our search didn't return enough verified supplier contacts for this product. You are entitled to a full refund.</p>
         <div class="highlight-box">
-          Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
-          with your Order ID and we will process your refund promptly — no questions asked.
+          Email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
+          with your Order ID and we will process your refund promptly. No questions asked.
         </div>
         <div class="order-id" id="order-id-failed"></div>
       </div>
 
-      <!-- ERROR -->
+      <!-- ERROR: logic unchanged -->
       <div id="state-error" style="display:none;">
         <span class="status-icon">⚠️</span>
         <h2>Something went wrong</h2>
         <p>There was a technical error processing your request.</p>
         <div class="highlight-box">
-          Email <a href="mailto:admin@khareedo.com"><strong>admin@khareedo.com</strong></a>
+          Email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
           with your Order ID and we will resolve this and issue a refund if needed.
         </div>
         <div class="order-id" id="order-id-error"></div>
@@ -283,14 +264,22 @@
   </main>
 
   <footer>
-    <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
-      <span style="font-weight:700;">khareedo</span>
-      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    <div class="footer-inner">
+      <span class="logo">vendordhundo<span style="color:var(--blue-accent)">.com</span></span>
+      <span>·</span>
+      <span>© 2026 Aavishkar Technologies Private Limited</span>
+      <span>·</span>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <span>·</span>
+      <a href="/terms">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy">Refund Policy</a>
     </div>
   </footer>
 
 </div>
 <script>
+  // ── ALL LOGIC BELOW IS IDENTICAL TO ORIGINAL result.html ──
   const params  = new URLSearchParams(window.location.search);
   const orderId = params.get('id');
   let pollTimer, countdownTimer, secondsLeft = 30 * 60;
@@ -359,7 +348,7 @@
           document.getElementById('order-id-error').textContent = 'Order ID: ' + orderId;
         }
       })
-      .catch(() => { /* transient error — keep polling */ });
+      .catch(() => { /* transient error, keep polling */ });
   }
 
   if (!orderId) {

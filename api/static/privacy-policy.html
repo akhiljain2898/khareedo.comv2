@@ -3,53 +3,56 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Privacy Policy — khareedo</title>
+<title>Privacy Policy | vendordhundo.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --ink:        #1a2e4a;
-    --ink-soft:   #4a5e74;
-    --ink-muted:  #8a9ab0;
-    --paper:      #ffffff;
-    --rule:       #e8eef6;
-    --blue:       #6B9FE4;
-    --font-body:  'Inter', Arial, sans-serif;
-    --radius:     8px;
+    --navy:        #1a2340;
+    --navy-mid:    #2c3e6b;
+    --blue-accent: #4a6cf7;
+    --blue-light:  #e8eeff;
+    --blue-soft:   #f0f4ff;
+    --text-body:   #475569;
+    --text-muted:  #94a3b8;
+    --white:       #ffffff;
+    --border:      #e2e8f0;
+    --shadow-md:   0 4px 24px rgba(26,35,64,0.10);
   }
+
   html { scroll-behavior: smooth; }
+
   body {
-    font-family: var(--font-body);
-    background: var(--paper);
-    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--navy);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
     font-size: 15px;
     line-height: 1.8;
   }
+
   .shell { min-height: 100vh; display: flex; flex-direction: column; }
+
   header {
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-    padding: 0 2rem;
+    width: 100%;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
     height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+    display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-family: var(--font-body);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -0.02em;
+    font-size: 1.2rem; font-weight: 800;
+    color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
+  .logo span { color: var(--blue-accent); }
+
   main {
     flex: 1;
     max-width: 760px;
@@ -57,56 +60,66 @@
     padding: 3rem 2rem 5rem;
     width: 100%;
   }
+
   .breadcrumb {
     font-size: 13px;
-    color: var(--ink-muted);
+    color: var(--text-muted);
     margin-bottom: 2rem;
   }
-  .breadcrumb a { color: var(--blue); text-decoration: none; }
+  .breadcrumb a { color: var(--blue-accent); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
+
   h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+    font-size: 2rem; font-weight: 700;
+    color: var(--navy); margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
   }
+
   .last-updated {
-    font-size: 13px;
-    color: var(--ink-muted);
+    font-size: 13px; color: var(--text-muted);
     margin-bottom: 2.5rem;
   }
+
   h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--ink);
-    margin-top: 2.25rem;
-    margin-bottom: 0.6rem;
+    font-size: 1.05rem; font-weight: 600;
+    color: var(--navy);
+    margin-top: 2.25rem; margin-bottom: 0.6rem;
   }
-  p { color: var(--ink-soft); margin-bottom: 1rem; }
-  ul { color: var(--ink-soft); margin: 0.5rem 0 1rem 1.5rem; }
+
+  p { color: var(--text-body); margin-bottom: 1rem; }
+  ul { color: var(--text-body); margin: 0.5rem 0 1rem 1.5rem; }
   ul li { margin-bottom: 0.4rem; }
-  a { color: var(--blue); text-decoration: none; }
+  a { color: var(--blue-accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
+
   .highlight-box {
-    background: #f0f6ff;
-    border-left: 4px solid var(--blue);
-    border-radius: var(--radius);
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue-accent);
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 1.5rem 0;
-    color: var(--ink-soft);
+    color: var(--text-body);
     font-size: 14px;
+    line-height: 1.65;
   }
+  .highlight-box strong { color: var(--navy); }
+
   footer {
-    background: var(--paper);
-    border-top: 1px solid var(--rule);
-    color: var(--ink-soft);
-    font-size: 13px;
+    width: 100%;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
     text-align: center;
-    padding: 1.5rem;
   }
-  footer a { color: var(--ink-soft); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .footer-inner .logo { font-size: 12px; font-weight: 700; letter-spacing: -0.02em; }
+  .footer-inner a { color: var(--text-muted); text-decoration: none; }
+  .footer-inner a:hover { text-decoration: underline; }
+
   @media (max-width: 640px) {
     main { padding: 2rem 1rem 4rem; }
     h1 { font-size: 1.5rem; }
@@ -117,11 +130,11 @@
 <div class="shell">
 
   <header>
-    <a href="/" class="logo">khareedo</a>
+    <a href="/" class="logo">vendordhundo<span>.com</span></a>
   </header>
 
   <main>
-    <div class="breadcrumb"><a href="/">← Back to khareedo</a></div>
+    <div class="breadcrumb"><a href="/">← Back to vendordhundo.com</a></div>
 
     <h1>Privacy Policy</h1>
     <p class="last-updated">Last updated: March 2026</p>
@@ -134,32 +147,32 @@
 
     <h2>1. Who We Are</h2>
     <p>
-      khareedo is a product of <strong>Aavishkar Technologies Private Limited</strong>,
-      a company incorporated in Maharashtra, India. Our website is khareedo.com.
+      vendordhundo.com is a product of <strong>Aavishkar Technologies Private Limited</strong>,
+      a company incorporated in Maharashtra, India. Our website is www.vendordhundo.com.
     </p>
     <p>
       For any privacy-related queries, contact us at
-      <a href="mailto:admin@khareedo.com">admin@khareedo.com</a>.
+      <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a>.
     </p>
 
     <h2>2. What Data We Collect</h2>
-    <p>When you use khareedo, the following information is collected or processed:</p>
+    <p>When you use vendordhundo.com, the following information is collected or processed:</p>
     <ul>
       <li>
-        <strong>Your search query</strong> — the product name you type. Stored permanently
+        <strong>Your search query</strong>: the product name you type. Stored permanently
         in our transaction log for refund management and fraud prevention.
       </li>
       <li>
-        <strong>Order ID and payment status</strong> — generated by Razorpay and stored for
+        <strong>Order ID and payment status</strong>: generated by Razorpay and stored for
         ops and refund purposes.
       </li>
       <li>
-        <strong>Email address</strong> — if provided during Razorpay checkout. Razorpay sends
+        <strong>Email address</strong>: if provided during Razorpay checkout. Razorpay sends
         you a payment receipt; we may receive your email as part of the payment notification
         and store it against your order for support purposes.
       </li>
       <li>
-        <strong>IP address and request metadata</strong> — logged by Railway as standard server
+        <strong>IP address and request metadata</strong>: logged by Railway as standard server
         infrastructure logs.
       </li>
     </ul>
@@ -170,7 +183,7 @@
       <li>To run your supplier search and deliver the Excel output</li>
       <li>To process your payment via Razorpay</li>
       <li>To manage refund requests and verify payment status</li>
-      <li>To respond to support queries at admin@khareedo.com</li>
+      <li>To respond to support queries at admin@verifiedwork.co</li>
       <li>To monitor our ops log (Google Sheets) for service quality</li>
     </ul>
     <p>We do not use your data for advertising, profiling, or marketing of any kind.</p>
@@ -191,18 +204,18 @@
     <p>
       A lightweight record of your search (query, result count, job status) is appended to
       an internal Google Sheets log for operational monitoring, accessible only to the
-      khareedo team.
+      vendordhundo.com team.
     </p>
 
     <h2>5. Data Storage and Infrastructure</h2>
     <p>
-      khareedo is hosted on Railway (railway.app). File storage uses Cloudflare R2.
+      vendordhundo.com is hosted on Railway (railway.app). File storage uses Cloudflare R2.
       Railway's servers may be located outside India, including in the United States or
       Singapore.
     </p>
     <p>
-      By using khareedo, you acknowledge and consent to your data being processed on servers
-      outside India for the purpose of providing this service.
+      By using vendordhundo.com, you acknowledge and consent to your data being processed on
+      servers outside India for the purpose of providing this service.
     </p>
 
     <h2>6. Payment Data</h2>
@@ -214,21 +227,21 @@
 
     <h2>7. Cookies</h2>
     <p>
-      khareedo does not use tracking cookies or advertising cookies. We do not use Google
-      Analytics, Facebook Pixel, or any third-party tracking tools. Any cookies set are
-      strictly functional.
+      vendordhundo.com does not use tracking cookies or advertising cookies. We do not use
+      Google Analytics, Facebook Pixel, or any third-party tracking tools. Any cookies set
+      are strictly functional.
     </p>
 
     <h2>8. Third-Party Services</h2>
     <p>We use the following third-party services:</p>
     <ul>
-      <li><strong>Railway</strong> — cloud hosting and server infrastructure</li>
-      <li><strong>Razorpay</strong> — payment processing</li>
-      <li><strong>Cloudflare R2</strong> — file storage</li>
-      <li><strong>Serper</strong> — Google Search API (processes your product query)</li>
-      <li><strong>Firecrawl</strong> — web scraping (fetches public vendor websites)</li>
-      <li><strong>Anthropic Claude</strong> — AI extraction (processes scraped page content)</li>
-      <li><strong>Google Fonts</strong> — font delivery (Inter typeface)</li>
+      <li><strong>Railway</strong>: cloud hosting and server infrastructure</li>
+      <li><strong>Razorpay</strong>: payment processing</li>
+      <li><strong>Cloudflare R2</strong>: file storage</li>
+      <li><strong>Serper</strong>: Google Search API (processes your product query)</li>
+      <li><strong>Firecrawl</strong>: web scraping (fetches public vendor websites)</li>
+      <li><strong>Anthropic Claude</strong>: AI extraction (processes scraped page content)</li>
+      <li><strong>Google Fonts</strong>: font delivery (Inter typeface)</li>
     </ul>
     <p>We do not share your personal data with any other third parties.</p>
 
@@ -236,13 +249,13 @@
     <p>
       Under the Digital Personal Data Protection Act (DPDP Act), 2023, you have the right
       to access, correct, or request erasure of your personal data. To exercise any of these
-      rights, email <a href="mailto:admin@khareedo.com">admin@khareedo.com</a> with your
-      Order ID. We will respond within 72 hours.
+      rights, email <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a> with
+      your Order ID. We will respond within 72 hours.
     </p>
 
     <h2>10. Children's Privacy</h2>
     <p>
-      khareedo is intended for business use and is not directed at individuals under 18.
+      vendordhundo.com is intended for business use and is not directed at individuals under 18.
       We do not knowingly collect data from minors.
     </p>
 
@@ -257,15 +270,22 @@
     <p>
       Aavishkar Technologies Private Limited<br/>
       Maharashtra, India<br/>
-      Email: <a href="mailto:admin@khareedo.com">admin@khareedo.com</a><br/>
-      Website: khareedo.com
+      Email: <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a><br/>
+      Website: www.vendordhundo.com
     </p>
   </main>
 
   <footer>
-    <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
-      <span style="font-weight:700;">khareedo</span>
-      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    <div class="footer-inner">
+      <span class="logo">vendordhundo<span style="color:var(--blue-accent)">.com</span></span>
+      <span>·</span>
+      <span>© 2026 Aavishkar Technologies Private Limited</span>
+      <span>·</span>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <span>·</span>
+      <a href="/terms">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy">Refund Policy</a>
     </div>
   </footer>
 

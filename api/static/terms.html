@@ -3,53 +3,53 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Terms of Service — khareedo</title>
+<title>Terms of Service | vendordhundo.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --ink:        #1a2e4a;
-    --ink-soft:   #4a5e74;
-    --ink-muted:  #8a9ab0;
-    --paper:      #ffffff;
-    --rule:       #e8eef6;
-    --blue:       #6B9FE4;
-    --font-body:  'Inter', Arial, sans-serif;
-    --radius:     8px;
+    --navy:        #1a2340;
+    --blue-accent: #4a6cf7;
+    --blue-soft:   #f0f4ff;
+    --text-body:   #475569;
+    --text-muted:  #94a3b8;
+    --white:       #ffffff;
+    --border:      #e2e8f0;
   }
+
   html { scroll-behavior: smooth; }
+
   body {
-    font-family: var(--font-body);
-    background: var(--paper);
-    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--navy);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
     font-size: 15px;
     line-height: 1.8;
   }
+
   .shell { min-height: 100vh; display: flex; flex-direction: column; }
+
   header {
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-    padding: 0 2rem;
+    width: 100%;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
     height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+    display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-family: var(--font-body);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -0.02em;
+    font-size: 1.2rem; font-weight: 800;
+    color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
+  .logo span { color: var(--blue-accent); }
+
   main {
     flex: 1;
     max-width: 760px;
@@ -57,56 +57,61 @@
     padding: 3rem 2rem 5rem;
     width: 100%;
   }
+
   .breadcrumb {
-    font-size: 13px;
-    color: var(--ink-muted);
+    font-size: 13px; color: var(--text-muted);
     margin-bottom: 2rem;
   }
-  .breadcrumb a { color: var(--blue); text-decoration: none; }
+  .breadcrumb a { color: var(--blue-accent); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
+
   h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+    font-size: 2rem; font-weight: 700;
+    color: var(--navy); margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
   }
-  .last-updated {
-    font-size: 13px;
-    color: var(--ink-muted);
-    margin-bottom: 2.5rem;
-  }
+  .last-updated { font-size: 13px; color: var(--text-muted); margin-bottom: 2.5rem; }
+
   h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--ink);
-    margin-top: 2.25rem;
-    margin-bottom: 0.6rem;
+    font-size: 1.05rem; font-weight: 600;
+    color: var(--navy);
+    margin-top: 2.25rem; margin-bottom: 0.6rem;
   }
-  p { color: var(--ink-soft); margin-bottom: 1rem; }
-  ul { color: var(--ink-soft); margin: 0.5rem 0 1rem 1.5rem; }
+
+  p { color: var(--text-body); margin-bottom: 1rem; }
+  ul { color: var(--text-body); margin: 0.5rem 0 1rem 1.5rem; }
   ul li { margin-bottom: 0.4rem; }
-  a { color: var(--blue); text-decoration: none; }
+  a { color: var(--blue-accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
+
   .highlight-box {
-    background: #f0f6ff;
-    border-left: 4px solid var(--blue);
-    border-radius: var(--radius);
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue-accent);
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 1.5rem 0;
-    color: var(--ink-soft);
+    color: var(--text-body);
     font-size: 14px;
+    line-height: 1.65;
   }
+  .highlight-box strong { color: var(--navy); }
+
   footer {
-    background: var(--paper);
-    border-top: 1px solid var(--rule);
-    color: var(--ink-soft);
-    font-size: 13px;
+    width: 100%;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
     text-align: center;
-    padding: 1.5rem;
   }
-  footer a { color: var(--ink-soft); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .footer-inner .logo { font-size: 12px; font-weight: 700; letter-spacing: -0.02em; }
+  .footer-inner a { color: var(--text-muted); text-decoration: none; }
+  .footer-inner a:hover { text-decoration: underline; }
+
   @media (max-width: 640px) {
     main { padding: 2rem 1rem 4rem; }
     h1 { font-size: 1.5rem; }
@@ -117,25 +122,25 @@
 <div class="shell">
 
   <header>
-    <a href="/" class="logo">khareedo</a>
+    <a href="/" class="logo">vendordhundo<span>.com</span></a>
   </header>
 
   <main>
-    <div class="breadcrumb"><a href="/">← Back to khareedo</a></div>
+    <div class="breadcrumb"><a href="/">← Back to vendordhundo.com</a></div>
 
     <h1>Terms of Service</h1>
     <p class="last-updated">Last updated: March 2026</p>
 
     <div class="highlight-box">
-      <strong>Summary:</strong> khareedo is a supplier discovery tool, not a sourcing or
-      procurement service. The output is a starting point for your research — always verify
+      <strong>Summary:</strong> vendordhundo.com is a supplier discovery tool, not a sourcing or
+      procurement service. The output is a starting point for your research. Always verify
       supplier details independently before entering into any commercial agreement.
       By using this service, you agree to these terms.
     </div>
 
     <h2>1. Acceptance of Terms</h2>
     <p>
-      By accessing or using khareedo at khareedo.com, you agree to be bound by these Terms
+      By accessing or using vendordhundo.com, you agree to be bound by these Terms
       of Service. If you do not agree, please do not use the service.
     </p>
     <p>
@@ -146,19 +151,19 @@
 
     <h2>2. Description of Service</h2>
     <p>
-      khareedo is an automated supplier discovery tool. It searches the web, scrapes publicly
-      available company websites, and uses AI to extract supplier contact details — delivering
-      a downloadable Excel file with up to 15 verified supplier contacts.
+      vendordhundo.com is an automated supplier discovery tool. It searches the web, scrapes
+      publicly available company websites, and uses AI to extract supplier contact details —
+      delivering a downloadable Excel file with up to 20 verified supplier contacts.
     </p>
     <p>
-      khareedo is operated by <strong>Aavishkar Technologies Private Limited</strong>,
+      vendordhundo.com is operated by <strong>Aavishkar Technologies Private Limited</strong>,
       a company incorporated under the Companies Act, 2013, in Maharashtra, India.
     </p>
 
     <h2>3. Not a Procurement Service</h2>
     <p>
-      The supplier information generated by khareedo is automated and based on publicly available
-      data. It is intended as a starting point for sourcing research. It does not constitute:
+      The supplier information generated by vendordhundo.com is automated and based on publicly
+      available data. It is intended as a starting point for sourcing research. It does not constitute:
     </p>
     <ul>
       <li>A verified, audited, or certified supplier database</li>
@@ -171,7 +176,7 @@
     </p>
 
     <h2>4. Eligibility and Acceptable Use</h2>
-    <p>You may use khareedo only if:</p>
+    <p>You may use vendordhundo.com only if:</p>
     <ul>
       <li>You are at least 18 years of age</li>
       <li>You are using the service for lawful business purposes</li>
@@ -186,32 +191,32 @@
 
     <h2>5. Data Accuracy</h2>
     <p>
-      khareedo extracts contact data from publicly available company websites. We do not
-      independently verify the accuracy, completeness, or currency of this data. Phone numbers,
-      email addresses, and other contact details may be outdated or incorrect.
+      vendordhundo.com extracts contact data from publicly available company websites. We do
+      not independently verify the accuracy, completeness, or currency of this data. Phone
+      numbers, email addresses, and other contact details may be outdated or incorrect.
     </p>
     <p>
-      You are solely responsible for verifying supplier information before use. khareedo is not
-      liable for any commercial decisions made on the basis of the output.
+      You are solely responsible for verifying supplier information before use. vendordhundo.com
+      is not liable for any commercial decisions made on the basis of the output.
     </p>
 
     <h2>6. Pricing and Payment</h2>
     <p>
-      khareedo charges a flat fee of <strong>₹99 per search</strong>. Payments are processed
-      securely by Razorpay. By making a payment, you also agree to Razorpay's terms of service.
-      Aavishkar Technologies Private Limited does not store your payment credentials.
+      vendordhundo.com charges a flat fee of <strong>₹99 per search</strong>. Payments are
+      processed securely by Razorpay. By making a payment, you also agree to Razorpay's terms
+      of service. Aavishkar Technologies Private Limited does not store your payment credentials.
     </p>
     <p>
-      khareedo is currently not registered under the Goods and Services Tax (GST) Act.
+      vendordhundo.com is currently not registered under the Goods and Services Tax (GST) Act.
       No GST invoice will be issued at this time. A payment receipt will be sent to your email
       address via Razorpay upon successful payment.
     </p>
 
     <h2>7. Intellectual Property</h2>
     <p>
-      All software, algorithms, design, and content on khareedo are the intellectual property
-      of Aavishkar Technologies Private Limited. You may not reproduce, distribute, or create
-      derivative works without prior written permission.
+      All software, algorithms, design, and content on vendordhundo.com are the intellectual
+      property of Aavishkar Technologies Private Limited. You may not reproduce, distribute,
+      or create derivative works without prior written permission.
     </p>
     <p>
       The supplier report generated from your search query is yours to use for your own
@@ -222,7 +227,7 @@
     <p>
       To the maximum extent permitted by applicable law, Aavishkar Technologies Private Limited
       shall not be liable for any indirect, incidental, or consequential damages arising from
-      your use of khareedo, including but not limited to:
+      your use of vendordhundo.com, including but not limited to:
     </p>
     <ul>
       <li>Inaccuracies in supplier contact information</li>
@@ -237,7 +242,7 @@
 
     <h2>9. Service Availability</h2>
     <p>
-      We strive to keep khareedo available at all times but do not guarantee uninterrupted
+      We strive to keep vendordhundo.com available at all times but do not guarantee uninterrupted
       access. The service may be temporarily unavailable due to maintenance or circumstances
       beyond our control.
     </p>
@@ -259,15 +264,22 @@
     <p>
       Aavishkar Technologies Private Limited<br/>
       Maharashtra, India<br/>
-      Email: <a href="mailto:admin@khareedo.com">admin@khareedo.com</a><br/>
-      Website: khareedo.com
+      Email: <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a><br/>
+      Website: www.vendordhundo.com
     </p>
   </main>
 
   <footer>
-    <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
-      <span style="font-weight:700;">khareedo</span>
-      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    <div class="footer-inner">
+      <span class="logo">vendordhundo<span style="color:var(--blue-accent)">.com</span></span>
+      <span>·</span>
+      <span>© 2026 Aavishkar Technologies Private Limited</span>
+      <span>·</span>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <span>·</span>
+      <a href="/terms">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy">Refund Policy</a>
     </div>
   </footer>
 

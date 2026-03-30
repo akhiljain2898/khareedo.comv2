@@ -3,54 +3,56 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Refund Policy — khareedo</title>
+<title>Refund Policy | vendordhundo.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --ink:        #1a2e4a;
-    --ink-soft:   #4a5e74;
-    --ink-muted:  #8a9ab0;
-    --paper:      #ffffff;
-    --rule:       #e8eef6;
-    --blue:       #6B9FE4;
-    --accent-2:   #1A6B4A;
-    --font-body:  'Inter', Arial, sans-serif;
-    --radius:     8px;
+    --navy:        #1a2340;
+    --blue-accent: #4a6cf7;
+    --blue-soft:   #f0f4ff;
+    --blue-light:  #e8eeff;
+    --text-body:   #475569;
+    --text-muted:  #94a3b8;
+    --white:       #ffffff;
+    --border:      #e2e8f0;
+    --green:       #16a34a;
+    --red:         #dc2626;
   }
+
   html { scroll-behavior: smooth; }
+
   body {
-    font-family: var(--font-body);
-    background: var(--paper);
-    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--navy);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
     font-size: 15px;
     line-height: 1.8;
   }
+
   .shell { min-height: 100vh; display: flex; flex-direction: column; }
+
   header {
-    background: var(--paper);
-    border-bottom: 1px solid var(--rule);
-    padding: 0 2rem;
+    width: 100%;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
     height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 8px rgba(107,159,228,0.08);
+    display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-family: var(--font-body);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -0.02em;
+    font-size: 1.2rem; font-weight: 800;
+    color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
+  .logo span { color: var(--blue-accent); }
+
   main {
     flex: 1;
     max-width: 760px;
@@ -58,81 +60,95 @@
     padding: 3rem 2rem 5rem;
     width: 100%;
   }
+
   .breadcrumb {
-    font-size: 13px;
-    color: var(--ink-muted);
+    font-size: 13px; color: var(--text-muted);
     margin-bottom: 2rem;
   }
-  .breadcrumb a { color: var(--blue); text-decoration: none; }
+  .breadcrumb a { color: var(--blue-accent); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
+
   h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+    font-size: 2rem; font-weight: 700;
+    color: var(--navy); margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
   }
-  .last-updated {
-    font-size: 13px;
-    color: var(--ink-muted);
-    margin-bottom: 2.5rem;
-  }
+  .last-updated { font-size: 13px; color: var(--text-muted); margin-bottom: 2.5rem; }
+
   h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--ink);
-    margin-top: 2.25rem;
-    margin-bottom: 0.6rem;
+    font-size: 1.05rem; font-weight: 600;
+    color: var(--navy);
+    margin-top: 2.25rem; margin-bottom: 0.6rem;
   }
-  p { color: var(--ink-soft); margin-bottom: 1rem; }
-  ul { color: var(--ink-soft); margin: 0.5rem 0 1rem 1.5rem; }
+
+  p { color: var(--text-body); margin-bottom: 1rem; }
+  ul { color: var(--text-body); margin: 0.5rem 0 1rem 1.5rem; }
   ul li { margin-bottom: 0.4rem; }
-  a { color: var(--blue); text-decoration: none; }
+  a { color: var(--blue-accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
+
   .highlight-box {
-    background: #f0f6ff;
-    border-left: 4px solid var(--blue);
-    border-radius: var(--radius);
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue-accent);
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 1.5rem 0;
-    color: var(--ink-soft);
+    color: var(--text-body);
     font-size: 14px;
+    line-height: 1.65;
   }
+  .highlight-box strong { color: var(--navy); }
+
+  /* Eligibility table: matches index card aesthetic */
   .eligibility-table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0 1.5rem;
     font-size: 14px;
-    color: var(--ink-soft);
+    color: var(--text-body);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
   }
   .eligibility-table th {
-    background: #f0f6ff;
+    background: var(--blue-soft);
     padding: 0.65rem 1rem;
     text-align: left;
     font-weight: 600;
-    color: var(--ink);
-    border: 1px solid var(--rule);
+    color: var(--navy);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    letter-spacing: 0.02em;
   }
   .eligibility-table td {
     padding: 0.65rem 1rem;
-    border: 1px solid var(--rule);
+    border-bottom: 1px solid var(--border);
     vertical-align: top;
   }
-  .yes { color: #1A6B4A; font-weight: 600; }
-  .no  { color: #C8410B; font-weight: 600; }
+  .eligibility-table tr:last-child td { border-bottom: none; }
+  .yes { color: var(--green); font-weight: 600; }
+  .no  { color: var(--red);   font-weight: 600; }
+
   footer {
-    background: var(--paper);
-    border-top: 1px solid var(--rule);
-    color: var(--ink-soft);
-    font-size: 13px;
+    width: 100%;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
     text-align: center;
-    padding: 1.5rem;
   }
-  footer a { color: var(--ink-soft); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .footer-inner .logo { font-size: 12px; font-weight: 700; letter-spacing: -0.02em; }
+  .footer-inner a { color: var(--text-muted); text-decoration: none; }
+  .footer-inner a:hover { text-decoration: underline; }
+
   @media (max-width: 640px) {
     main { padding: 2rem 1rem 4rem; }
     h1 { font-size: 1.5rem; }
+    .eligibility-table { font-size: 13px; }
   }
 </style>
 </head>
@@ -140,26 +156,26 @@
 <div class="shell">
 
   <header>
-    <a href="/" class="logo">khareedo</a>
+    <a href="/" class="logo">vendordhundo<span>.com</span></a>
   </header>
 
   <main>
-    <div class="breadcrumb"><a href="/">← Back to khareedo</a></div>
+    <div class="breadcrumb"><a href="/">← Back to vendordhundo.com</a></div>
 
     <h1>Refund Policy</h1>
     <p class="last-updated">Last updated: March 2026</p>
 
     <div class="highlight-box">
       <strong>Summary:</strong> We operate a blanket manual refund policy. If you have any
-      challenge at all — technical failure, poor results, or anything else — email us with
+      challenge at all (technical failure, poor results, or anything else). Email us with
       your Order ID and we will make it right. No refunds after the Excel file has been
       successfully downloaded.
     </div>
 
     <h2>1. Pricing</h2>
     <p>
-      khareedo charges a flat fee of <strong>₹99 per search</strong>, inclusive of all charges.
-      You pay before the search runs. Payment is processed securely by Razorpay.
+      vendordhundo.com charges a flat fee of <strong>₹99 per search</strong>, inclusive of
+      all charges. You pay before the search runs. Payment is processed securely by Razorpay.
     </p>
 
     <h2>2. Refund Eligibility</h2>
@@ -169,16 +185,16 @@
         <th>Refund</th>
       </tr>
       <tr>
-        <td>Technical error on our end — pipeline failed or returned no results</td>
-        <td class="yes">Yes — full refund</td>
+        <td>Technical error on our end. Pipeline failed or returned no results</td>
+        <td class="yes">Yes, full refund</td>
       </tr>
       <tr>
         <td>Payment charged but download link did not appear</td>
-        <td class="yes">Yes — full refund</td>
+        <td class="yes">Yes, full refund</td>
       </tr>
       <tr>
         <td>Results were poor quality or not useful for your query</td>
-        <td class="yes">Yes — email us to explain</td>
+        <td class="yes">Yes, email us to explain</td>
       </tr>
       <tr>
         <td>Excel file was successfully downloaded</td>
@@ -190,12 +206,12 @@
       </tr>
       <tr>
         <td>Download link expired (30-minute window)</td>
-        <td class="no">No refund — contact us to retrieve</td>
+        <td class="no">No refund. Contact us to retrieve</td>
       </tr>
     </table>
 
     <h2>3. How to Request a Refund</h2>
-    <p>Email us at <a href="mailto:admin@khareedo.com">admin@khareedo.com</a> with:</p>
+    <p>Email us at <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a> with:</p>
     <ul>
       <li>Your <strong>Order ID</strong> (shown on the result screen)</li>
       <li>A brief description of what went wrong</li>
@@ -214,24 +230,31 @@
 
     <h2>5. No Cancellation After Download</h2>
     <p>
-      khareedo delivers a digital file that is immediately accessible upon download. The service
-      is considered fully delivered once the Excel file has been successfully downloaded.
-      No cancellations or refunds are possible after this point.
+      vendordhundo.com delivers a digital file that is immediately accessible upon download.
+      The service is considered fully delivered once the Excel file has been successfully
+      downloaded. No cancellations or refunds are possible after this point.
     </p>
 
     <h2>6. Contact</h2>
     <p>
       Aavishkar Technologies Private Limited<br/>
       Maharashtra, India<br/>
-      Email: <a href="mailto:admin@khareedo.com">admin@khareedo.com</a><br/>
-      Website: khareedo.com
+      Email: <a href="mailto:admin@verifiedwork.co">admin@verifiedwork.co</a><br/>
+      Website: www.vendordhundo.com
     </p>
   </main>
 
   <footer>
-    <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
-      <span style="font-weight:700;">khareedo</span>
-      <span>© 2026 Aavishkar Technologies Private Limited · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/refund-policy">Refund Policy</a></span>
+    <div class="footer-inner">
+      <span class="logo">vendordhundo<span style="color:var(--blue-accent)">.com</span></span>
+      <span>·</span>
+      <span>© 2026 Aavishkar Technologies Private Limited</span>
+      <span>·</span>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <span>·</span>
+      <a href="/terms">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy">Refund Policy</a>
     </div>
   </footer>
 

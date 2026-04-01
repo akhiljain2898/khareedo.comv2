@@ -10,7 +10,7 @@ from fastapi.responses import Response, StreamingResponse
 import io
 from common.redis_client import get_job_status
 from common.db import get_order, mark_download_initiated
-from common.r2_client import get_bytes, delete_object, object_exists
+from common.r2_client import get_bytes, object_exists
 from worker.sheets_log import log_download
 
 logger = logging.getLogger(__name__)
@@ -57,68 +57,65 @@ async def download_excel(id: str = Query(..., min_length=1)):
 
     Flow:
     1. Verify order exists and payment is paid
-    2. Fetch bytes from R2 download key
-    3. Stream response
-    4. Mark download_initiated in Postgres
-    5. Delete download/ key from R2 (archive/ copy untouched)
+    2. Check R2 download key exists (30 min TTL handled by R2 lifecycle rule)
+    3. Fetch bytes from R2
+    4. Stream response to browser
+    5. Mark download_initiated in Postgres
     6. Log to Google Sheets Downloads tab
+
+    NOTE: We do NOT delete the R2 download key after download.
+    The 30-minute lifecycle TTL on the download/ prefix handles cleanup automatically.
+    This allows the user to re-download within the 30-minute window if their
+    connection drops or the browser fails to save the file.
     """
     order_id = id.strip()
 
-    # Verify order
+    # Verify order exists
     order = get_order(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    # Verify payment is confirmed
     if order.get("payment_status") != "paid":
         raise HTTPException(status_code=403, detail="Payment not confirmed")
 
+    # Verify job is in a downloadable state
     job_status = order.get("job_status")
     if job_status not in ("done", "partial"):
         raise HTTPException(status_code=404, detail="File not ready")
 
-    # Fetch from R2
+    # Check R2 download key still exists (may have expired after 30 min)
     download_key = f"download/{order_id}.xlsx"
-
     if not object_exists(download_key):
-        # Link has expired (30 min TTL)
         raise HTTPException(
             status_code=410,
-            detail="Download link has expired. Email admin@khareedo.com with your Order ID."
+            detail="Download link has expired. Email admin@verifiedwork.co with your Order ID."
         )
 
+    # Fetch file bytes from R2
     try:
         xlsx_bytes = get_bytes(download_key)
     except Exception as e:
         logger.error(f"R2 fetch failed for {order_id}: {e}")
         raise HTTPException(status_code=502, detail="Could not retrieve file")
 
-    # Build safe filename from query
+    # Build a clean, readable filename for the downloaded file
     query_slug = order.get("query", "suppliers").replace(" ", "_")[:40]
-    filename = f"khareedo_{query_slug}_{order_id[:8]}.xlsx"
+    filename = f"vendordhundo_{query_slug}_{order_id[:8]}.xlsx"
 
-    # Mark download initiated in Postgres
+    # Mark download initiated in Postgres (non-fatal if it fails)
     try:
         mark_download_initiated(order_id)
     except Exception as e:
         logger.error(f"Failed to mark download_initiated for {order_id}: {e}")
-        # Non-fatal — continue with delivery
 
-    # Delete the download key from R2 (archive copy stays)
-    try:
-        delete_object(download_key)
-    except Exception as e:
-        logger.error(f"Failed to delete R2 download key for {order_id}: {e}")
-        # Non-fatal — file may be re-downloaded until TTL expires naturally
-
-    # Log to Sheets Downloads tab
+    # Log to Sheets Downloads tab (non-fatal if it fails)
     try:
         log_download(order_id, order.get("query", ""))
     except Exception as e:
         logger.error(f"Sheets download log failed for {order_id}: {e}")
-        # Non-fatal
 
-    # Stream the file
+    # Stream the file to the browser
     return StreamingResponse(
         io.BytesIO(xlsx_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -278,7 +278,7 @@
   </footer>
 
 </div>
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   // ── ALL LOGIC BELOW IS IDENTICAL TO ORIGINAL result.html ──
   const params  = new URLSearchParams(window.location.search);
   const orderId = params.get('id');
@@ -340,7 +340,7 @@
           clearInterval(pollTimer);
           show('failed');
           document.getElementById('order-id-failed').textContent = 'Order ID: ' + orderId;
-        } else if (data.status === 'processing' || data.status === 'pending') {
+                } else if (data.status === 'processing' || data.status === 'pending') {
           // keep polling
         } else {
           clearInterval(pollTimer);

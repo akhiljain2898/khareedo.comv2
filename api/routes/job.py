@@ -6,11 +6,12 @@ GET /api/download?id={order_id}    — streams XLSX from R2 to the browser
 
 import logging
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import StreamingResponse
 import io
+from botocore.exceptions import ClientError
 from common.redis_client import get_job_status
 from common.db import get_order, mark_download_initiated
-from common.r2_client import get_bytes, object_exists
+from common.r2_client import get_bytes
 from worker.sheets_log import log_download
 
 logger = logging.getLogger(__name__)
@@ -57,16 +58,18 @@ async def download_excel(id: str = Query(..., min_length=1)):
 
     Flow:
     1. Verify order exists and payment is paid
-    2. Check R2 download key exists (30 min TTL handled by R2 lifecycle rule)
-    3. Fetch bytes from R2
+    2. Attempt to fetch bytes directly from R2 (no separate existence check)
+    3. If R2 returns 404/NoSuchKey → file expired, return 410
     4. Stream response to browser
     5. Mark download_initiated in Postgres
     6. Log to Google Sheets Downloads tab
 
     NOTE: We do NOT delete the R2 download key after download.
     The 30-minute lifecycle TTL on the download/ prefix handles cleanup automatically.
-    This allows the user to re-download within the 30-minute window if their
-    connection drops or the browser fails to save the file.
+    This allows the user to re-download within the 30-minute window.
+
+    NOTE: No separate object_exists() check — we go straight to get_bytes().
+    One R2 call instead of two. ClientError with NoSuchKey = expired.
     """
     order_id = id.strip()
 
@@ -84,17 +87,21 @@ async def download_excel(id: str = Query(..., min_length=1)):
     if job_status not in ("done", "partial"):
         raise HTTPException(status_code=404, detail="File not ready")
 
-    # Check R2 download key still exists (may have expired after 30 min)
+    # Fetch file bytes directly from R2
+    # If the file doesn't exist (expired TTL), ClientError is raised with NoSuchKey
     download_key = f"download/{order_id}.xlsx"
-    if not object_exists(download_key):
-        raise HTTPException(
-            status_code=410,
-            detail="Download link has expired. Email admin@verifiedwork.co with your Order ID."
-        )
-
-    # Fetch file bytes from R2
     try:
         xlsx_bytes = get_bytes(download_key)
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "")
+        if error_code in ("NoSuchKey", "404"):
+            logger.warning(f"R2 key not found for {order_id} — likely expired")
+            raise HTTPException(
+                status_code=410,
+                detail="Download link has expired. Email admin@verifiedwork.co with your Order ID."
+            )
+        logger.error(f"R2 ClientError for {order_id}: {e}")
+        raise HTTPException(status_code=502, detail="Could not retrieve file")
     except Exception as e:
         logger.error(f"R2 fetch failed for {order_id}: {e}")
         raise HTTPException(status_code=502, detail="Could not retrieve file")

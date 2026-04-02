@@ -2,7 +2,13 @@
 worker/extractor.py
 Claude Haiku contact extraction.
 Reads a scraped page's markdown and returns a structured contact dict or None.
-A contact is only valid if ALL 5 required fields are present and non-empty.
+
+Validation rule:
+- REQUIRED: name, phone, address, website (all 4 must be present)
+- OPTIONAL: email (scraped and included if found, but not a blocker)
+
+Indian B2B supplier websites commonly hide email behind contact forms.
+Requiring email was discarding valid suppliers — removed as a hard requirement.
 """
 
 import json
@@ -14,8 +20,10 @@ logger = logging.getLogger(__name__)
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-# Fields required for a contact to be considered valid
-REQUIRED_FIELDS = {"name", "phone", "email", "address", "website"}
+# Fields required for a contact to be considered valid.
+# Email is intentionally excluded — it is scraped but not required.
+# Many legitimate Indian B2B supplier sites don't expose email on the page.
+REQUIRED_FIELDS = {"name", "phone", "address", "website"}
 
 _SYSTEM_PROMPT = """You are a data extraction assistant. You will be given the markdown content of a company website page. Your job is to extract the primary supplier contact information.
 
@@ -30,10 +38,11 @@ Return ONLY a valid JSON object with exactly these fields:
 }
 
 Rules:
-- If any of name, phone, email, address, or website cannot be found, set that field to null
+- If any field cannot be found, set that field to null
 - Do not invent or guess data — only extract what is clearly present on the page
 - Return ONLY the JSON object — no explanation, no markdown, no backticks
-- product_description should describe what the company supplies, not their company history"""
+- product_description should describe what the company supplies, not their company history
+- email is optional — set to null if not visible on the page, do not guess"""
 
 _STRICT_SYSTEM_PROMPT = _SYSTEM_PROMPT + "\n\nCRITICAL: Return ONLY raw JSON. No backticks, no markdown, no text before or after the JSON object."
 
@@ -79,8 +88,11 @@ def _parse_json(raw: str) -> dict | None:
 
 def is_valid(contact: dict | None) -> bool:
     """
-    A contact is valid only if ALL 5 required fields are present and non-empty.
-    product_description is optional — it enriches the output but is not required.
+    A contact is valid if all 4 required fields are present and non-empty:
+    name, phone, address, website.
+
+    Email is optional — included in output if found, not checked here.
+    product_description is also optional.
     """
     if not contact:
         return False
@@ -99,6 +111,8 @@ def extract_contact(page_markdown: str, url: str) -> dict | None:
     3. Returns validated contact dict or None
 
     The URL is injected into the result as 'website' if Haiku doesn't find it.
+    Email will be included in the output if Haiku finds it, but absence of
+    email does not discard the contact.
     """
     if not page_markdown or len(page_markdown.strip()) < 100:
         # Page too short / empty — skip
@@ -130,7 +144,7 @@ def extract_contact(page_markdown: str, url: str) -> dict | None:
     if not contact.get("website"):
         contact["website"] = url
 
-    # Validate all required fields
+    # Validate required fields (email not included in check)
     if not is_valid(contact):
         logger.info(f"Contact from {url} missing required fields — discarded")
         return None

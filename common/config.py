@@ -33,7 +33,7 @@ GOOGLE_SHEET_ID             = os.environ["GOOGLE_SHEET_ID"]
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8000")
 
 # ── Pipeline constants (hardcoded as per architecture decision) ───────────────
-SCRAPE_TIMEOUT_SECONDS = 100
+SCRAPE_TIMEOUT_SECONDS = 120
 TARGET_RESULT_COUNT    = 20
 MAX_KEYWORDS           = 8
 

@@ -63,7 +63,6 @@
     justify-content: center;
   }
 
-  /* Card matches index.html card style exactly */
   .status-card {
     width: 100%;
     background: var(--white);
@@ -87,7 +86,6 @@
     margin-bottom: 1.5rem; line-height: 1.65;
   }
 
-  /* Spinner: unchanged logic, updated colours */
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
     width: 40px; height: 40px;
@@ -98,10 +96,27 @@
     margin: 0 auto 1.5rem;
   }
 
+  /* Progress bar */
+  .progress-bar-wrap {
+    width: 100%; background: var(--border);
+    border-radius: 99px; height: 6px;
+    margin: 0 0 1rem; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 99px;
+    background: var(--blue-accent);
+    width: 0%;
+    transition: width 0.8s ease;
+  }
+  .progress-pct {
+    font-size: 12px; color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
   @keyframes fadepulse { 0%,100%{opacity:.5} 50%{opacity:1} }
   .progress-label {
     font-size: 13px; color: var(--text-muted);
-    margin-top: -0.75rem; margin-bottom: 1.5rem;
+    margin-top: -0.25rem; margin-bottom: 1.5rem;
     animation: fadepulse 2.4s ease-in-out infinite;
   }
 
@@ -116,7 +131,6 @@
     margin-bottom: 1.5rem;
   }
 
-  /* Button matches index.html btn-primary */
   .btn {
     display: inline-flex; align-items: center; gap: 0.5rem;
     padding: 0.8rem 1.75rem;
@@ -153,7 +167,6 @@
     border-top: 1px solid var(--border);
   }
 
-  /* Highlight box matches index.html */
   .highlight-box {
     background: var(--blue-soft);
     border-left: 3px solid var(--blue-accent);
@@ -200,15 +213,19 @@
   <main>
     <div class="status-card">
 
-      <!-- PROCESSING: logic unchanged -->
+      <!-- PROCESSING -->
       <div id="state-processing">
         <div class="spinner"></div>
         <h2>Finding your suppliers…</h2>
         <p>We're searching company websites and extracting verified contacts. This takes up to 90 seconds.</p>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+        <div class="progress-pct" id="progress-pct">0%</div>
         <div class="progress-label" id="progress-label">Searching the web…</div>
       </div>
 
-      <!-- DONE: logic unchanged -->
+      <!-- DONE -->
       <div id="state-done" style="display:none;">
         <span class="status-icon">✅</span>
         <h2>Your supplier list is ready</h2>
@@ -220,23 +237,26 @@
         <div class="order-id" id="order-id-done"></div>
       </div>
 
-      <!-- PARTIAL: logic unchanged -->
+      <!-- PARTIAL -->
       <div id="state-partial" style="display:none;">
         <span class="status-icon">⚠️</span>
-        <h2>Partial results available</h2>
-        <p>We found fewer verified suppliers than expected for this query. You can download what's available.</p>
+        <h2>Results ready — fewer than expected</h2>
+        <p>We found verified supplier contacts for your query, though fewer than our usual target.</p>
         <div class="result-badge" id="partial-count-badge"></div>
         <br/>
         <a href="#" class="btn btn-primary" id="download-btn-partial" style="margin-bottom:0.75rem;">Download Excel →</a>
-        <br/><br/>
-        <div class="highlight-box">
-          Need more results? Email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
-          with your Order ID and we'll assist you.
+        <p class="expiry-note">⚠ Download link expires in 30 minutes.</p>
+        <div class="highlight-box" style="margin-top:1rem;">
+          <strong>Please note:</strong> Downloading confirms delivery. Once downloaded, this order is
+          considered fulfilled and is not eligible for a refund.<br/><br/>
+          If you would prefer a refund instead of downloading, email
+          <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
+          with your Order ID before downloading.
         </div>
         <div class="order-id" id="order-id-partial"></div>
       </div>
 
-      <!-- FAILED: logic unchanged -->
+      <!-- FAILED -->
       <div id="state-failed" style="display:none;">
         <span class="status-icon">❌</span>
         <h2>Not enough results found</h2>
@@ -248,7 +268,7 @@
         <div class="order-id" id="order-id-failed"></div>
       </div>
 
-      <!-- ERROR: logic unchanged -->
+      <!-- ERROR -->
       <div id="state-error" style="display:none;">
         <span class="status-icon">⚠️</span>
         <h2>Something went wrong</h2>
@@ -278,8 +298,7 @@
   </footer>
 
 </div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-  // ── ALL LOGIC BELOW IS IDENTICAL TO ORIGINAL result.html ──
+<script>
   const params  = new URLSearchParams(window.location.search);
   const orderId = params.get('id');
   let pollTimer, countdownTimer, secondsLeft = 30 * 60;
@@ -318,6 +337,35 @@
     }
   }
 
+  // Progress bar — time-based simulation over 90s pipeline timeout.
+  // Eases to ~85% over 90s, never hits 100% until job resolves.
+  let progressTimer = null;
+  let progressStart = null;
+  const PIPELINE_TIMEOUT = 90; // must match SCRAPE_TIMEOUT_SECONDS in config.py
+
+  function startProgressBar() {
+    progressStart = Date.now();
+    const fill = document.getElementById('progress-bar-fill');
+    const pctEl = document.getElementById('progress-pct');
+    if (!fill) return;
+    progressTimer = setInterval(() => {
+      const elapsed = (Date.now() - progressStart) / 1000;
+      // Ease-out curve: fast early, slows near 85%
+      const raw = Math.min(elapsed / PIPELINE_TIMEOUT, 1);
+      const pct = Math.min(85, Math.round(100 * (1 - Math.pow(1 - raw, 2.5))));
+      fill.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = pct + '%';
+    }, 500);
+  }
+
+  function completeProgressBar() {
+    if (progressTimer) clearInterval(progressTimer);
+    const fill = document.getElementById('progress-bar-fill');
+    const pctEl = document.getElementById('progress-pct');
+    if (fill) fill.style.width = '100%';
+    if (pctEl) pctEl.textContent = '100%';
+  }
+
   function poll() {
     if (!orderId) { show('error'); return; }
     fetch('/api/job-status?id=' + encodeURIComponent(orderId))
@@ -325,6 +373,7 @@
       .then(data => {
         if (data.status === 'done') {
           clearInterval(pollTimer);
+          completeProgressBar();
           show('done');
           document.getElementById('result-count-badge').textContent = (data.result_count || '?') + ' verified suppliers found';
           document.getElementById('download-btn').href = '/api/download?id=' + encodeURIComponent(orderId);
@@ -332,18 +381,21 @@
           startCountdown();
         } else if (data.status === 'partial') {
           clearInterval(pollTimer);
+          completeProgressBar();
           show('partial');
           document.getElementById('partial-count-badge').textContent = (data.result_count || '?') + ' suppliers found';
           document.getElementById('download-btn-partial').href = '/api/download?id=' + encodeURIComponent(orderId);
           document.getElementById('order-id-partial').textContent = 'Order ID: ' + orderId;
         } else if (data.status === 'failed') {
           clearInterval(pollTimer);
+          completeProgressBar();
           show('failed');
           document.getElementById('order-id-failed').textContent = 'Order ID: ' + orderId;
-                } else if (data.status === 'processing' || data.status === 'pending') {
+        } else if (data.status === 'processing' || data.status === 'pending') {
           // keep polling
         } else {
           clearInterval(pollTimer);
+          completeProgressBar();
           show('error');
           document.getElementById('order-id-error').textContent = 'Order ID: ' + orderId;
         }
@@ -355,6 +407,7 @@
     show('error');
   } else {
     show('processing');
+    startProgressBar();
     setInterval(rotateMsgs, 4000);
     poll();
     pollTimer = setInterval(poll, 2000);

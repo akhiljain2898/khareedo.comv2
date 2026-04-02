@@ -33,8 +33,8 @@ GOOGLE_SHEET_ID             = os.environ["GOOGLE_SHEET_ID"]
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8000")
 
 # ── Pipeline constants (hardcoded as per architecture decision) ───────────────
-SCRAPE_TIMEOUT_SECONDS = 75
-TARGET_RESULT_COUNT    = 15
+SCRAPE_TIMEOUT_SECONDS = 90
+TARGET_RESULT_COUNT    = 20
 MAX_KEYWORDS           = 8
 
 # ── Redis keys ────────────────────────────────────────────────────────────────

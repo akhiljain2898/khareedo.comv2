@@ -23,7 +23,7 @@ _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 # Fields required for a contact to be considered valid.
 # Email is intentionally excluded — it is scraped but not required.
 # Many legitimate Indian B2B supplier sites don't expose email on the page.
-REQUIRED_FIELDS = {"name", "phone", "address", "website"}
+REQUIRED_FIELDS = {"name", "address", "website"}
 
 _SYSTEM_PROMPT = """You are a data extraction assistant. You will be given the markdown content of a company website page. Your job is to extract the primary supplier contact information.
 

@@ -7,9 +7,17 @@ Also handles:
 - Serper search (returns URL list for a query)
 - URL deduplication
 - Directory domain filtering
+
+Homepage fallback logic:
+- If a Serper URL is a deep product/category page and extraction fails,
+  we retry once on the domain root (homepage).
+- Indian B2B supplier sites almost always have phone/address on their
+  homepage or contact page, but not on individual product pages.
+- This doubles hit rate without extra Serper calls.
 """
 
 import logging
+from urllib.parse import urlparse
 import httpx
 from common.config import SERPER_API_KEY, FIRECRAWL_API_KEY
 from worker.extractor import extract_contact
@@ -65,6 +73,32 @@ def _is_directory_url(url: str) -> bool:
         if domain in url_lower:
             return True
     return False
+
+
+def _get_homepage(url: str) -> str | None:
+    """
+    Extract the homepage (scheme + domain) from a URL.
+    Returns None if URL is malformed.
+
+    Example:
+        https://chaitanyaagrobiotech.co.in/soya-isolate-soya-concentrate.htm
+        → https://chaitanyaagrobiotech.co.in
+
+    We only return a homepage if the original URL is a deep page
+    (has a non-trivial path). If the URL is already a homepage or
+    near-root, there's no point retrying the same page.
+    """
+    try:
+        parsed = urlparse(url)
+        # Only worth retrying if the path is more than just "/"
+        path = parsed.path.rstrip("/")
+        if not path or path == "":
+            # Already a homepage — no fallback needed
+            return None
+        homepage = f"{parsed.scheme}://{parsed.netloc}"
+        return homepage
+    except Exception:
+        return None
 
 
 # ── SERPER SEARCH ────────────────────────────────────────────────────────────
@@ -154,18 +188,50 @@ def filter_urls(urls: list[str], seen: set[str]) -> list[str]:
 
 # ── SINGLE URL: SCRAPE + EXTRACT ─────────────────────────────────────────────
 
-def scrape_and_extract(url: str) -> dict | None:
+def scrape_and_extract(url: str, seen_urls: set[str] | None = None) -> dict | None:
     """
     Scrape one URL with Firecrawl, then extract contact with Claude Haiku.
+
+    Homepage fallback:
+    - If the product/category page fails validation, we try the domain homepage.
+    - Homepage is only attempted if it hasn't been seen before in this session.
+    - This handles the common Indian B2B pattern where contact info lives on
+      the homepage but Serper returns a deep product page URL.
+
     Returns a valid contact dict or None.
     Logs and swallows all errors — the loop continues regardless.
     """
     logger.info(f"Scraping: {url}")
     markdown = firecrawl_scrape(url)
-    if not markdown:
+    if markdown:
+        contact = extract_contact(markdown, url)
+        if contact:
+            logger.info(f"Valid contact extracted from {url}: {contact.get('name')}")
+            return contact
+
+    # ── HOMEPAGE FALLBACK ────────────────────────────────────────────────────
+    # Product page failed — try the company homepage.
+    # Only attempt if homepage is a different URL and hasn't been scraped yet.
+    homepage = _get_homepage(url)
+    if not homepage:
         return None
 
-    contact = extract_contact(markdown, url)
+    # Skip if we've already scraped this homepage in this session
+    if seen_urls is not None and homepage in seen_urls:
+        logger.info(f"Homepage already seen, skipping fallback: {homepage}")
+        return None
+
+    logger.info(f"Product page failed — trying homepage fallback: {homepage}")
+
+    # Mark homepage as seen so we don't scrape it again via another keyword
+    if seen_urls is not None:
+        seen_urls.add(homepage)
+
+    homepage_markdown = firecrawl_scrape(homepage)
+    if not homepage_markdown:
+        return None
+
+    contact = extract_contact(homepage_markdown, homepage)
     if contact:
-        logger.info(f"Valid contact extracted from {url}: {contact.get('name')}")
+        logger.info(f"Valid contact extracted from homepage {homepage}: {contact.get('name')}")
     return contact

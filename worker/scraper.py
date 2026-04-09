@@ -30,10 +30,7 @@ logger = logging.getLogger(__name__)
 # and is blocked by their anti-bot systems anyway.
 DIRECTORY_DOMAINS = {
     "indiamart.com",
-    "tradeindia.com",
-    "exportersindia.com",
     "justdial.com",
-    "kompass.com",
     "industrybuying.com",
     "alibaba.com",
     "aliexpress.com",

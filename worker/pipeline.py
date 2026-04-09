@@ -130,7 +130,7 @@ def run_pipeline(product_name: str) -> tuple[list[dict], int]:
                 logger.info(f"Target hit mid-batch — stopping")
                 break
 
-            contact = scrape_and_extract(url)
+            contact = scrape_and_extract(url, seen_urls)
             if contact:
                 results.append(contact)
                 logger.info(f"Results so far: {len(results)}/{TARGET_RESULT_COUNT}")

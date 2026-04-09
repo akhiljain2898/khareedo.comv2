@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 # and is blocked by their anti-bot systems anyway.
 DIRECTORY_DOMAINS = {
     "indiamart.com",
+    "tradeindia.com",
+    "exportersindia.com",
     "justdial.com",
     "industrybuying.com",
     "alibaba.com",
@@ -96,6 +98,30 @@ def _get_homepage(url: str) -> str | None:
         return homepage
     except Exception:
         return None
+
+
+# ── NO-FALLBACK DOMAINS ───────────────────────────────────────────────────────
+# Platforms/aggregators that will never have single-supplier contact info
+# on their homepage. Skip fallback immediately to save time.
+NO_FALLBACK_DOMAINS = {
+    "ensun.io",
+    "getdistributors.com",
+    "dial4trade.com",
+    "thomasnet.com",
+    "made-in-china.com",
+    "12taste.com",
+    "acrossbiotech.com",
+    "stdmfood.com",
+}
+
+
+def _should_attempt_fallback(url: str) -> bool:
+    """Return False for known platforms/aggregators to skip homepage fallback."""
+    url_lower = url.lower()
+    for domain in NO_FALLBACK_DOMAINS:
+        if domain in url_lower:
+            return False
+    return True
 
 
 # ── SERPER SEARCH ────────────────────────────────────────────────────────────
@@ -207,8 +233,11 @@ def scrape_and_extract(url: str, seen_urls: set[str] | None = None) -> dict | No
             return contact
 
     # ── HOMEPAGE FALLBACK ────────────────────────────────────────────────────
-    # Product page failed — try the company homepage.
-    # Only attempt if homepage is a different URL and hasn't been scraped yet.
+    # Only attempt for genuine company sites, not platforms or aggregators
+    if not _should_attempt_fallback(url):
+        logger.info(f"Skipping homepage fallback for platform: {url}")
+        return None
+
     homepage = _get_homepage(url)
     if not homepage:
         return None

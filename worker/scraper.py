@@ -33,7 +33,7 @@ FIRECRAWL_CONCURRENCY = 5
 
 # Max homepage fallbacks attempted per batch.
 # Prevents a full batch of failed product pages from exhausting time on fallbacks.
-MAX_FALLBACKS_PER_BATCH = 3
+MAX_FALLBACKS_PER_BATCH = 2
 
 # ── DIRECTORY DOMAIN FILTER ───────────────────────────────────────────────────
 # URLs from these domains are filtered out before scraping.
@@ -73,6 +73,18 @@ DIRECTORY_DOMAINS = {
     "yellowpages.com",
     "sulekha.com",
     "2gle.in",
+    "seair.co.in",
+    "dial4trade.com",
+    "appointdistributors.com",
+    "volza.com",
+    "cybex.in",
+    "shipmentdata.in",
+    "exportgenius.in",
+    "industryarc.com",
+    "technavio.com",
+    "mordorintelligence.com",
+    "grandviewresearch.com",
+    "marketsandmarkets.com",
 }
 
 # Platforms/aggregators that will never have single-supplier contact info

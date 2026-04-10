@@ -1,33 +1,44 @@
 """
 worker/scraper.py
-Sequential scrape-and-extract cycle.
-One URL at a time: Firecrawl → Haiku → is_valid → return contact or None.
 
-Also handles:
-- Serper search (returns URL list for a query)
+Changes in this version:
+- Firecrawl scraping is now ASYNC and PARALLEL (batch endpoint, 5 concurrent max)
+- DGFT Track A: serper_dgft_search() fires site:trade.gov.in queries
+- seen_urls is protected by asyncio.Lock to prevent race conditions
+- Homepage fallback is capped at MAX_FALLBACKS_PER_BATCH (3) per batch
+- source field added to every contact dict ("track_b" or "track_a_dgft")
+
+Still handles:
+- Serper search (Track B — general web)
 - URL deduplication
 - Directory domain filtering
-
-Homepage fallback logic:
-- If a Serper URL is a deep product/category page and extraction fails,
-  we retry once on the domain root (homepage).
-- Indian B2B supplier sites almost always have phone/address on their
-  homepage or contact page, but not on individual product pages.
-- This doubles hit rate without extra Serper calls.
+- Homepage fallback for Track B (capped)
 """
 
+import asyncio
 import logging
 from urllib.parse import urlparse
+
 import httpx
+
 from common.config import SERPER_API_KEY, FIRECRAWL_API_KEY
 from worker.extractor import extract_contact
 
 logger = logging.getLogger(__name__)
 
-# ── DIRECTORY DOMAIN FILTER ──────────────────────────────────────────────────
+# ── CONCURRENCY CAP ───────────────────────────────────────────────────────────
+# Firecrawl Hobby plan: 5 concurrent browsers.
+# We cap at 5 to stay within plan limits across all simultaneous scrapes.
+FIRECRAWL_CONCURRENCY = 5
+
+# Max homepage fallbacks attempted per batch.
+# Prevents a full batch of failed product pages from exhausting time on fallbacks.
+MAX_FALLBACKS_PER_BATCH = 3
+
+# ── DIRECTORY DOMAIN FILTER ───────────────────────────────────────────────────
 # URLs from these domains are filtered out before scraping.
-# They are directories, not vendor websites — scraping them violates their ToS
-# and is blocked by their anti-bot systems anyway.
+# IMPORTANT: trade.gov.in must NEVER be added here — DGFT IEC pages are
+# individual verified supplier profiles and are the target of Track A.
 DIRECTORY_DOMAINS = {
     "indiamart.com",
     "tradeindia.com",
@@ -64,45 +75,8 @@ DIRECTORY_DOMAINS = {
     "2gle.in",
 }
 
-
-def _is_directory_url(url: str) -> bool:
-    """Return True if the URL belongs to a known directory/aggregator domain."""
-    url_lower = url.lower()
-    for domain in DIRECTORY_DOMAINS:
-        if domain in url_lower:
-            return True
-    return False
-
-
-def _get_homepage(url: str) -> str | None:
-    """
-    Extract the homepage (scheme + domain) from a URL.
-    Returns None if URL is malformed.
-
-    Example:
-        https://chaitanyaagrobiotech.co.in/soya-isolate-soya-concentrate.htm
-        → https://chaitanyaagrobiotech.co.in
-
-    We only return a homepage if the original URL is a deep page
-    (has a non-trivial path). If the URL is already a homepage or
-    near-root, there's no point retrying the same page.
-    """
-    try:
-        parsed = urlparse(url)
-        # Only worth retrying if the path is more than just "/"
-        path = parsed.path.rstrip("/")
-        if not path or path == "":
-            # Already a homepage — no fallback needed
-            return None
-        homepage = f"{parsed.scheme}://{parsed.netloc}"
-        return homepage
-    except Exception:
-        return None
-
-
-# ── NO-FALLBACK DOMAINS ───────────────────────────────────────────────────────
 # Platforms/aggregators that will never have single-supplier contact info
-# on their homepage. Skip fallback immediately to save time.
+# on their homepage. Skip homepage fallback immediately to save time.
 NO_FALLBACK_DOMAINS = {
     "ensun.io",
     "getdistributors.com",
@@ -115,8 +89,17 @@ NO_FALLBACK_DOMAINS = {
 }
 
 
+# ── URL HELPERS ───────────────────────────────────────────────────────────────
+
+def _is_directory_url(url: str) -> bool:
+    url_lower = url.lower()
+    for domain in DIRECTORY_DOMAINS:
+        if domain in url_lower:
+            return True
+    return False
+
+
 def _should_attempt_fallback(url: str) -> bool:
-    """Return False for known platforms/aggregators to skip homepage fallback."""
     url_lower = url.lower()
     for domain in NO_FALLBACK_DOMAINS:
         if domain in url_lower:
@@ -124,14 +107,88 @@ def _should_attempt_fallback(url: str) -> bool:
     return True
 
 
-# ── SERPER SEARCH ────────────────────────────────────────────────────────────
+def _get_homepage(url: str) -> str | None:
+    """
+    Returns the scheme+domain root of a URL only if the URL is a deep page.
+    Returns None if the URL is already a homepage or is malformed.
+    """
+    try:
+        parsed = urlparse(url)
+        path = parsed.path.rstrip("/")
+        if not path:
+            return None
+        return f"{parsed.scheme}://{parsed.netloc}"
+    except Exception:
+        return None
+
+
+def _get_domain(url: str) -> str | None:
+    """Extract the netloc (domain) from a URL for deduplication."""
+    try:
+        return urlparse(url).netloc.lower()
+    except Exception:
+        return None
+
+
+def filter_urls(urls: list[str], seen: set[str]) -> list[str]:
+    """
+    Remove duplicates and directory domains from a URL list.
+    Adds surviving URLs to seen set immediately to prevent
+    concurrent batches from picking up the same URL.
+    """
+    clean = []
+    for url in urls:
+        if url in seen:
+            continue
+        if _is_directory_url(url):
+            continue
+        clean.append(url)
+        seen.add(url)
+    return clean
+
+
+# ── SERPER SEARCH ─────────────────────────────────────────────────────────────
 
 def serper_search(query: str) -> list[str]:
     """
-    Fire a Google search via Serper API.
-    Returns a list of up to 10 result URLs.
-    Returns empty list on any error — loop continues with next keyword.
+    Track B: fire a general Google search via Serper.
+    Returns up to 10 result URLs. Empty list on any error.
     """
+    try:
+        resp = httpx.post(
+            "https://google.serper.dev/search",
+            headers={
+                "X-API-KEY": SERPER_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json={"q": query, "num": 10, "gl": "in", "hl": "en"},
+            timeout=15.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return [
+            item.get("link", "")
+            for item in data.get("organic", [])
+            if item.get("link")
+        ]
+    except Exception as e:
+        logger.warning(f"Serper search failed for '{query}': {e}")
+        return []
+
+
+def serper_dgft_search(product_name: str) -> list[str]:
+    """
+    Track A: search for DGFT 'Source from India' exporter pages.
+
+    Fires: site:trade.gov.in/pages/source-from-india {product_name}
+
+    Returns a list of IEC page URLs like:
+        https://www.trade.gov.in/pages/source-from-india/0288014359
+
+    These are publicly accessible government-verified exporter profiles.
+    No login required. Firecrawl can scrape them directly.
+    """
+    query = f"site:trade.gov.in/pages/source-from-india {product_name}"
     try:
         resp = httpx.post(
             "https://google.serper.dev/search",
@@ -147,117 +204,181 @@ def serper_search(query: str) -> list[str]:
         urls = []
         for item in data.get("organic", []):
             link = item.get("link", "")
-            if link:
-                urls.append(link)
+            # Only keep actual IEC profile pages (have a numeric IEC at the end)
+            if "trade.gov.in/pages/source-from-india/" in link:
+                # Exclude the directory listing page itself
+                path = link.rstrip("/").split("/")[-1]
+                if path and path.isdigit():
+                    urls.append(link)
+        logger.info(f"DGFT Serper returned {len(urls)} IEC pages for '{product_name}'")
         return urls
     except Exception as e:
-        logger.warning(f"Serper search failed for query '{query}': {e}")
+        logger.warning(f"DGFT Serper search failed for '{product_name}': {e}")
         return []
 
 
-# ── FIRECRAWL SCRAPE ─────────────────────────────────────────────────────────
+# ── ASYNC FIRECRAWL ───────────────────────────────────────────────────────────
 
-def firecrawl_scrape(url: str) -> str | None:
+async def firecrawl_scrape_async(
+    url: str,
+    client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
+) -> tuple[str, str | None]:
     """
-    Scrape a single URL via Firecrawl.
-    Returns the page markdown content, or None on failure.
-    Firecrawl handles anti-bot, JavaScript rendering, etc.
+    Async scrape of a single URL via Firecrawl.
+    Semaphore limits to FIRECRAWL_CONCURRENCY simultaneous requests.
+
+    Returns (url, markdown_or_None).
+    Never raises — logs and returns None on any failure.
     """
-    try:
-        resp = httpx.post(
-            "https://api.firecrawl.dev/v1/scrape",
-            headers={
-                "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "url": url,
-                "formats": ["markdown"],
-                "onlyMainContent": True,
-                "timeout": 20000,  # 20s in ms
-            },
-            timeout=30.0,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("success"):
-            return data.get("data", {}).get("markdown", "")
-        logger.info(f"Firecrawl returned success=false for {url}")
-        return None
-    except Exception as e:
-        logger.warning(f"Firecrawl failed for {url}: {e}")
-        return None
+    async with semaphore:
+        try:
+            resp = await client.post(
+                "https://api.firecrawl.dev/v1/scrape",
+                headers={
+                    "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "url": url,
+                    "formats": ["markdown"],
+                    "onlyMainContent": True,
+                    "timeout": 20000,  # 20s in ms — Firecrawl internal timeout
+                },
+                timeout=30.0,  # httpx timeout — must be > Firecrawl internal
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("success"):
+                markdown = data.get("data", {}).get("markdown", "")
+                return url, markdown if markdown else None
+            logger.info(f"Firecrawl success=false for {url}")
+            return url, None
+        except Exception as e:
+            logger.warning(f"Firecrawl failed for {url}: {e}")
+            return url, None
 
 
-# ── URL FILTERING ─────────────────────────────────────────────────────────────
-
-def filter_urls(urls: list[str], seen: set[str]) -> list[str]:
+async def scrape_batch_async(
+    urls: list[str],
+    seen_urls: set[str],
+    seen_lock: asyncio.Lock,
+    source: str = "track_b",
+) -> list[dict]:
     """
-    Given a list of URLs from Serper:
-    1. Remove duplicates (already seen in this session)
-    2. Remove known directory domains
-    Returns clean list of new vendor URLs to scrape.
+    Scrape a batch of URLs in parallel (up to FIRECRAWL_CONCURRENCY at once).
+
+    For Track B URLs:
+    - Runs homepage fallback if product page fails (capped at MAX_FALLBACKS_PER_BATCH)
+    - Fallback uses the same semaphore — counts against concurrency cap
+
+    For Track A (DGFT) URLs:
+    - No homepage fallback — IEC pages are already the canonical supplier page
+    - Deduplication by domain against seen_urls prevents Track A/B overlap
+
+    Adds source field to every returned contact dict.
+    Returns list of valid contact dicts (may be empty).
+    """
+    if not urls:
+        return []
+
+    semaphore = asyncio.Semaphore(FIRECRAWL_CONCURRENCY)
+    results = []
+
+    async with httpx.AsyncClient() as client:
+        # ── PHASE 1: Scrape all URLs in parallel ────────────────────────────
+        tasks = [firecrawl_scrape_async(url, client, semaphore) for url in urls]
+        scraped = await asyncio.gather(*tasks)
+
+        # ── PHASE 2: Extract contacts + collect fallback candidates ─────────
+        fallback_needed = []  # (original_url, homepage_url)
+
+        for url, markdown in scraped:
+            if not markdown:
+                # No content — queue for homepage fallback if Track B
+                if source == "track_b" and _should_attempt_fallback(url):
+                    homepage = _get_homepage(url)
+                    if homepage:
+                        async with seen_lock:
+                            if homepage not in seen_urls:
+                                seen_urls.add(homepage)
+                                fallback_needed.append((url, homepage))
+                continue
+
+            contact = extract_contact(markdown, url)
+            if contact:
+                contact["source"] = source
+                results.append(contact)
+                logger.info(f"[{source}] Contact extracted: {contact.get('name')} from {url}")
+            else:
+                # Content present but extraction failed — try homepage fallback for Track B
+                if source == "track_b" and _should_attempt_fallback(url):
+                    homepage = _get_homepage(url)
+                    if homepage:
+                        async with seen_lock:
+                            if homepage not in seen_urls:
+                                seen_urls.add(homepage)
+                                fallback_needed.append((url, homepage))
+
+        # ── PHASE 3: Homepage fallbacks (Track B only, capped) ──────────────
+        if fallback_needed and source == "track_b":
+            # Cap fallbacks per batch to protect time budget
+            capped = fallback_needed[:MAX_FALLBACKS_PER_BATCH]
+            skipped = len(fallback_needed) - len(capped)
+            if skipped > 0:
+                logger.info(f"Homepage fallback cap: skipping {skipped} fallbacks")
+
+            fallback_urls = [hp for _, hp in capped]
+            logger.info(f"Attempting {len(fallback_urls)} homepage fallbacks")
+
+            fallback_tasks = [
+                firecrawl_scrape_async(hp, client, semaphore)
+                for hp in fallback_urls
+            ]
+            fallback_scraped = await asyncio.gather(*fallback_tasks)
+
+            for homepage_url, markdown in fallback_scraped:
+                if not markdown:
+                    continue
+                contact = extract_contact(markdown, homepage_url)
+                if contact:
+                    contact["source"] = source
+                    results.append(contact)
+                    logger.info(
+                        f"[{source}] Contact from homepage fallback: "
+                        f"{contact.get('name')} from {homepage_url}"
+                    )
+
+    return results
+
+
+# ── DGFT DEDUPLICATION ────────────────────────────────────────────────────────
+
+def filter_dgft_urls(
+    dgft_urls: list[str],
+    seen_urls: set[str],
+    track_b_results: list[dict],
+) -> list[str]:
+    """
+    Filter DGFT IEC page URLs before scraping to prevent duplication.
+
+    Pre-scrape check (done here):
+    - URL already in seen_urls → skip (same IEC page already queued or scraped)
+
+    Post-scrape domain check (done in pipeline.py after scraping):
+    - We cannot know a supplier's website domain until after the IEC page is scraped.
+    - pipeline.py compares extracted website domains against Track B results
+      before extending the final results list.
+
+    Returns clean list of DGFT IEC page URLs to scrape.
     """
     clean = []
-    for url in urls:
-        if url in seen:
-            continue
-        if _is_directory_url(url):
+    for url in dgft_urls:
+        if url in seen_urls:
+            logger.info(f"DGFT URL already seen — skipping: {url}")
             continue
         clean.append(url)
-        seen.add(url)
+        seen_urls.add(url)
+
+    logger.info(f"DGFT: {len(dgft_urls)} IEC pages → {len(clean)} after pre-scrape dedup")
     return clean
-
-
-# ── SINGLE URL: SCRAPE + EXTRACT ─────────────────────────────────────────────
-
-def scrape_and_extract(url: str, seen_urls: set[str] | None = None) -> dict | None:
-    """
-    Scrape one URL with Firecrawl, then extract contact with Claude Haiku.
-
-    Homepage fallback:
-    - If the product/category page fails validation, we try the domain homepage.
-    - Homepage is only attempted if it hasn't been seen before in this session.
-    - This handles the common Indian B2B pattern where contact info lives on
-      the homepage but Serper returns a deep product page URL.
-
-    Returns a valid contact dict or None.
-    Logs and swallows all errors — the loop continues regardless.
-    """
-    logger.info(f"Scraping: {url}")
-    markdown = firecrawl_scrape(url)
-    if markdown:
-        contact = extract_contact(markdown, url)
-        if contact:
-            logger.info(f"Valid contact extracted from {url}: {contact.get('name')}")
-            return contact
-
-    # ── HOMEPAGE FALLBACK ────────────────────────────────────────────────────
-    # Only attempt for genuine company sites, not platforms or aggregators
-    if not _should_attempt_fallback(url):
-        logger.info(f"Skipping homepage fallback for platform: {url}")
-        return None
-
-    homepage = _get_homepage(url)
-    if not homepage:
-        return None
-
-    # Skip if we've already scraped this homepage in this session
-    if seen_urls is not None and homepage in seen_urls:
-        logger.info(f"Homepage already seen, skipping fallback: {homepage}")
-        return None
-
-    logger.info(f"Product page failed — trying homepage fallback: {homepage}")
-
-    # Mark homepage as seen so we don't scrape it again via another keyword
-    if seen_urls is not None:
-        seen_urls.add(homepage)
-
-    homepage_markdown = firecrawl_scrape(homepage)
-    if not homepage_markdown:
-        return None
-
-    contact = extract_contact(homepage_markdown, homepage)
-    if contact:
-        logger.info(f"Valid contact extracted from homepage {homepage}: {contact.get('name')}")
-    return contact

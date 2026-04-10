@@ -49,7 +49,7 @@ B2B_MODIFIERS = [
 
 # Time budget reserved for DGFT Track A at the end of the pipeline.
 # If less than this many seconds remain, DGFT is skipped.
-DGFT_TIME_RESERVE_SECONDS = 25
+DGFT_TIME_RESERVE_SECONDS = 15
 
 
 def build_b2b_keywords(product_name: str) -> list[str]:

@@ -97,9 +97,23 @@ def _parse_json(raw: str) -> dict | None:
         return None
 
 
+# Non-Indian country indicators in address fields.
+# Contacts with these in their address are discarded — we only want Indian suppliers.
+NON_INDIAN_COUNTRIES = {
+    "china", "chinese", "usa", "united states", "germany", "german",
+    "japan", "japanese", "korea", "korean", "taiwan", "uk ", "united kingdom",
+    "australia", "canada", "france", "italy", "spain", "netherlands",
+    "singapore", "malaysia", "indonesia", "thailand", "vietnam",
+    "bangladesh", "pakistan", "sri lanka",
+}
+
+
 def is_valid(contact: dict | None) -> bool:
     """
-    A contact is valid if name, address, and website are all present and non-empty.
+    A contact is valid if:
+    1. name, address, and website are all present and non-empty
+    2. Address does not indicate a non-Indian company
+
     phone and email are optional — their absence does not fail validation.
     """
     if not contact:
@@ -108,8 +122,20 @@ def is_valid(contact: dict | None) -> bool:
         val = contact.get(field)
         if not val or not str(val).strip():
             return False
-    return True
 
+    # Reject non-Indian suppliers — check address and name for country indicators
+    address_lower = str(contact.get("address", "")).lower()
+    name_lower = str(contact.get("name", "")).lower()
+    combined = address_lower + " " + name_lower
+    for country in NON_INDIAN_COUNTRIES:
+        if country in combined:
+            logger.info(
+                f"Non-Indian supplier discarded: {contact.get('name')} "
+                f"(matched '{country}' in address/name)"
+            )
+            return False
+
+    return True
 
 def extract_contact(page_markdown: str, url: str) -> dict | None:
     """

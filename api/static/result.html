@@ -237,21 +237,19 @@
         <div class="order-id" id="order-id-done"></div>
       </div>
 
-      <!-- PARTIAL -->
+      <!-- PARTIAL — no warning symbol, same tone as done state -->
       <div id="state-partial" style="display:none;">
-        <span class="status-icon">⚠️</span>
-        <h2>Results ready — fewer than expected</h2>
-        <p>We found verified supplier contacts for your query, though fewer than our usual target.</p>
+        <span class="status-icon">✅</span>
+        <h2>Your supplier list is ready</h2>
+        <p>Download within 30 minutes.</p>
         <div class="result-badge" id="partial-count-badge"></div>
         <br/>
-        <a href="#" class="btn btn-primary" id="download-btn-partial" style="margin-bottom:0.75rem;">Download Excel →</a>
-        <p class="expiry-note">⚠ Download link expires in 30 minutes.</p>
+        <a href="#" class="btn btn-primary" id="download-btn-partial">Download Excel →</a>
+        <p class="expiry-note">⚠ Download link expires in 30 minutes</p>
         <div class="highlight-box" style="margin-top:1rem;">
-          <strong>Please note:</strong> Downloading confirms delivery. Once downloaded, this order is
-          considered fulfilled and is not eligible for a refund.<br/><br/>
-          If you would prefer a refund instead of downloading, email
-          <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
-          with your Order ID before downloading.
+          Downloading confirms delivery. Once downloaded, this order is not eligible for a refund.<br/><br/>
+          For any issues, email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
+          with your Order ID.
         </div>
         <div class="order-id" id="order-id-partial"></div>
       </div>

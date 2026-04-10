@@ -3,9 +3,14 @@ worker/main.py
 BRPOP loop — the background worker service.
 Blocks on Redis queue, receives jobs, runs the full pipeline per job.
 
+Change in this version:
+- run_pipeline() is now async — wrapped with asyncio.run() here.
+  All other logic is unchanged from the previous version.
+
 Run with: python -m worker.main
 """
 
+import asyncio
 import time
 import logging
 import sys
@@ -27,7 +32,7 @@ logger = logging.getLogger(__name__)
 def process_job(order_id: str, query: str):
     """
     Full job lifecycle for a single order:
-    1. Run adaptive pipeline
+    1. Run adaptive pipeline (async — wrapped with asyncio.run)
     2. Build Excel if any results
     3. Update Postgres + Redis
     4. Log to Google Sheets
@@ -42,7 +47,10 @@ def process_job(order_id: str, query: str):
     keywords_used = 0
 
     try:
-        results, keywords_used = run_pipeline(query)
+        # run_pipeline is now async — run it to completion from this sync context.
+        # asyncio.run() creates a new event loop, runs the coroutine, then closes it.
+        # Safe here because process_job is called from a synchronous BRPOP loop.
+        results, keywords_used = asyncio.run(run_pipeline(query))
     except Exception as e:
         logger.error(f"Pipeline error for {order_id}: {e}", exc_info=True)
         # Pipeline itself threw — mark failed

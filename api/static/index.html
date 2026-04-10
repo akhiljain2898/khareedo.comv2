@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>vendordhundo.com: Find Verified Suppliers in 90 Seconds</title>
-<meta name="description" content="Type a product name, pay ₹99, get 20 verified supplier contacts in 90 seconds. No login. No subscription."/>
+<title>vendordhundo.com — AI Supplier Search for ₹79</title>
+<meta name="description" content="Type a product name, pay ₹79, get verified Indian supplier contacts in 90 seconds. AI-powered. No login. No subscription."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
@@ -273,6 +273,53 @@
   .footer-inner a { color: var(--text-muted); text-decoration: none; }
   .footer-inner a:hover { text-decoration: underline; }
 
+  /* COMPARISON CALLOUT */
+  .compare-strip {
+    background: #fff8f0;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .compare-strip .vs-label {
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #92400e;
+    white-space: nowrap;
+  }
+  .compare-items {
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; flex: 1;
+  }
+  .compare-item {
+    font-size: 12.5px; color: #78350f;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+  .compare-item .price { font-weight: 700; }
+  .compare-arrow {
+    font-size: 18px; color: #f59e0b;
+  }
+  .compare-us {
+    font-size: 13px; font-weight: 700;
+    color: #166534;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .compare-strip { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+  }
+
   @media (max-width: 600px) {
     main { padding: 2rem 1rem 3.5rem; }
     .how-grid { grid-template-columns: 1fr; }
@@ -293,10 +340,22 @@
     <div class="hero">
       <div class="hero-badge">
         <span class="dot"></span>
-        Pay per search &nbsp;·&nbsp; No login &nbsp;·&nbsp; No subscription
+        AI-powered search &nbsp;·&nbsp; No login &nbsp;·&nbsp; No subscription
       </div>
-      <h1>Your next supplier is<br><span class="accent"> just ₹99</span> away.</h1>
-      <p class="hero-sub">Stop chasing dead numbers. Get 20 verified supplier contacts in 90 seconds. Sourced directly from company websites across India.</p>
+      <h1>AI-powered search for<br>verified suppliers at <span class="accent">₹79.</span></h1>
+      <p class="hero-sub">Costs less than 4 cups of chai. Under 3 minutes. Our AI scours company websites across India and delivers verified supplier contacts — straight to your Excel.</p>
+    </div>
+
+    <!-- COMPETITOR COMPARISON CALLOUT -->
+    <div class="compare-strip">
+      <span class="vs-label">vs directories</span>
+      <div class="compare-items">
+        <span class="compare-item">IndiaMart <span class="price">₹28,000/yr</span></span>
+        <span class="compare-item">TradeIndia <span class="price">₹15,000/yr</span></span>
+        <span class="compare-item">ExportersIndia <span class="price">₹60,000/yr</span></span>
+        <span class="compare-arrow">→</span>
+        <span class="compare-us">vendordhundo ₹79 per search</span>
+      </div>
     </div>
 
     <!-- SEARCH CARD -->
@@ -318,9 +377,7 @@
       <div class="field-error" id="field-error"></div>
 
       <div class="highlight-box">
-        <strong>What you get:</strong> Up to 20 verified supplier contacts extracted directly
-        from company websites. Company name, phone, email, address and product description.
-        Single-tab Excel file, ready to use.
+        <strong>What you get:</strong> Verified Indian supplier contacts extracted directly from company websites — company name, address, website, phone and email where available. Single-tab Excel file, ready to use in minutes.
       </div>
 
       <label class="terms-row" for="consent-check">
@@ -336,7 +393,7 @@
 
       <div class="btn-row">
         <button class="btn btn-disabled" id="proceed-btn" disabled>
-          Get My Supplier List for ₹99
+          Get My Supplier List for ₹79
         </button>
         <p class="btn-note">Secure payment via Razorpay · Results in 90 seconds</p>
       </div>
@@ -353,20 +410,20 @@
         </div>
         <div class="how-item">
           <span class="icon">💳</span>
-          <h3>Pay ₹99</h3>
+          <h3>Pay ₹79</h3>
           <p>Secure checkout via Razorpay. UPI, cards, net banking accepted.</p>
         </div>
         <div class="how-item">
           <span class="icon">📥</span>
           <h3>Download Excel</h3>
-          <p>20 verified supplier contacts, ready to call or email.</p>
+          <p>Verified supplier contacts, ready to call or email. Results in 90 seconds.</p>
         </div>
       </div>
     </div>
 
     <!-- TRUST STRIP -->
     <div class="trust-strip">
-      <div class="trust-item"><span class="t-dot">✓</span> 20 verified contacts per search</div>
+      <div class="trust-item"><span class="t-dot">✓</span> AI-powered supplier search</div>
       <div class="trust-item"><span class="t-dot">✓</span> Sourced from real company websites</div>
       <div class="trust-item"><span class="t-dot">✓</span> No account needed</div>
       <div class="trust-item"><span class="t-dot">✓</span> Results in 90 seconds</div>
@@ -442,7 +499,7 @@
         },
         modal: {
           ondismiss: function() {
-            btn.textContent = 'Get My Supplier List for ₹99';
+            btn.textContent = 'Get My Supplier List for ₹79';
             sync();
           }
         }

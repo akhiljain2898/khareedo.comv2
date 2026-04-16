@@ -74,7 +74,6 @@ def _build_workbook(results: list[dict], product_name: str) -> bytes:
             column=1,
             value=(
                 f"We found {len(results)} verified suppliers for '{product_name}'. "
-                f"If you need more results, email admin@khareedo.com with your Order ID."
             )
         )
         note_cell.font = Font(name="Calibri", size=10, italic=True, color="8A9AB0")

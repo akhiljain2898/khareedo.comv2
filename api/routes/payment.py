@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 QUERY_REGEX = re.compile(r'^[a-zA-Z0-9\s\-]{3,100}$')
-AMOUNT_PAISE = 2000
+AMOUNT_PAISE = 4900
 RAZORPAY_ORDERS_URL = "https://api.razorpay.com/v1/orders"
 
 def _razorpay_auth() -> str:

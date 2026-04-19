@@ -13,7 +13,7 @@
 <link rel="manifest" href="/static/site.webmanifest"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -38,6 +38,8 @@
     color: var(--navy);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     font-size: 15px;
     line-height: 1.6;
   }
@@ -54,7 +56,7 @@
     box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-size: 1.2rem; font-weight: 800;
+    font-size: 1.2rem; font-weight: 700;
     color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
@@ -224,7 +226,7 @@
       <div id="state-processing">
         <div class="spinner"></div>
         <h2>Finding your suppliers…</h2>
-        <p>We're searching company websites and extracting verified contacts. This takes up to 120 seconds.</p>
+        <p>We're searching company websites and extracting verified contacts. This takes up to 3 minutes.</p>
         <div class="progress-bar-wrap">
           <div class="progress-bar-fill" id="progress-bar-fill"></div>
         </div>
@@ -342,11 +344,11 @@
     }
   }
 
-  // Progress bar — time-based simulation over 90s pipeline timeout.
-  // Eases to ~85% over 90s, never hits 100% until job resolves.
+  // Progress bar — time-based simulation over 180s pipeline timeout.
+  // Eases to ~85% over 180s, never hits 100% until job resolves.
   let progressTimer = null;
   let progressStart = null;
-  const PIPELINE_TIMEOUT = 90; // must match SCRAPE_TIMEOUT_SECONDS in config.py
+  const PIPELINE_TIMEOUT = 180; // must match SCRAPE_TIMEOUT_SECONDS in config.py
 
   function startProgressBar() {
     progressStart = Date.now();

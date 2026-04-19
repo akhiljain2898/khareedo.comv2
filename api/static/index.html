@@ -32,7 +32,7 @@
 <link rel="manifest" href="/static/site.webmanifest"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;0&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,6 +62,8 @@
     color: var(--navy);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     line-height: 1.6;
   }
 
@@ -76,7 +78,7 @@
     box-shadow: 0 1px 8px rgba(74,108,247,0.06);
   }
   .logo {
-    font-size: 1.2rem; font-weight: 800;
+    font-size: 1.2rem; font-weight: 700;
     color: var(--navy); letter-spacing: -0.03em;
     text-decoration: none;
   }
@@ -112,9 +114,9 @@
 
   .hero h1 {
     font-size: clamp(2rem, 4.5vw, 2.8rem);
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.08;
-    letter-spacing: -2px;
+    letter-spacing: -1.5px;
     color: var(--navy);
     margin-bottom: 16px;
   }
@@ -348,7 +350,7 @@
   @media (max-width: 600px) {
     main { padding: 2rem 1rem 3.5rem; }
     .how-grid { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 2.4rem; letter-spacing: -1.5px; }
+    .hero h1 { font-size: 2.4rem; letter-spacing: -1px; }
   }
 </style>
 </head>
@@ -420,7 +422,7 @@
         <button class="btn btn-disabled" id="proceed-btn" disabled>
           Get My Supplier List for ₹49
         </button>
-        <p class="btn-note">Secure payment via Razorpay · Results in 120 seconds</p>
+        <p class="btn-note">Secure payment via Razorpay · Results in 3 minutes</p>
       </div>
     </div>
 
@@ -441,7 +443,7 @@
         <div class="how-item">
           <span class="icon">📥</span>
           <h3>Download Excel</h3>
-          <p>Verified supplier contacts, ready to call or email. Results in 120 seconds.</p>
+          <p>Verified supplier contacts, ready to call or email. Results in 3 minutes.</p>
         </div>
       </div>
     </div>
@@ -451,7 +453,7 @@
       <div class="trust-item"><span class="t-dot">✓</span> AI-powered supplier search</div>
       <div class="trust-item"><span class="t-dot">✓</span> Sourced from real company websites</div>
       <div class="trust-item"><span class="t-dot">✓</span> No account needed</div>
-      <div class="trust-item"><span class="t-dot">✓</span> Results in 90 seconds</div>
+      <div class="trust-item"><span class="t-dot">✓</span> Results in 3 minutes</div>
       <div class="trust-item"><span class="t-dot">✓</span> Suppliers across India</div>
     </div>
 

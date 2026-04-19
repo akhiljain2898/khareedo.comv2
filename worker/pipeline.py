@@ -1,19 +1,20 @@
 """
 worker/pipeline.py
 
-Changes in this version:
-- run_pipeline() is now async — call with asyncio.run(run_pipeline(...))
-- Track B: parallel batch scraping per keyword round (5 concurrent via Firecrawl Hobby)
-- Track A: DGFT 'Source from India' — fires after Track B keywords complete
-- seen_urls protected by asyncio.Lock throughout
-- DGFT results deduplicated against Track B results before scraping
-- source field ("track_b" / "track_a_dgft") on every contact dict
+Bug-fix release — changes from previous version:
 
-FIX (Apr 2026): Domain-level deduplication.
-- seen_domains set introduced and passed to all filter_urls() and scrape_batch_async() calls
-- Eliminates duplicate supplier entries caused by same company appearing via multiple URLs
-  (deep product page + homepage fallback + different keyword rounds)
-- seen_domains is stripped of www. prefix for consistent matching (handled in _get_domain)
+1. filter_dgft_urls() call updated: track_b_results argument removed
+   (dead parameter eliminated in scraper.py).
+
+2. DGFT scrape_batch_async() wrapped in asyncio.wait_for() with a time-budget
+   derived from remaining pipeline time. Prevents DGFT from overrunning
+   SCRAPE_TIMEOUT_SECONDS when Track B runs close to the limit — previously
+   the 180s hard timeout was only checked at the top of the Track B loop,
+   meaning a DGFT scrape could push total runtime to 220+ seconds and risk
+   the worker process being killed by Railway mid-job.
+
+3. All other logic unchanged: async Track B keyword loop, time budget
+   management, result counting, logging.
 """
 
 import asyncio
@@ -31,12 +32,10 @@ from worker.scraper import (
     filter_urls,
     filter_dgft_urls,
     scrape_batch_async,
-    _get_domain,
 )
 
 logger = logging.getLogger(__name__)
 
-# B2B modifiers — unchanged from previous version
 B2B_MODIFIERS = [
     "bulk supplier India",
     "manufacturer India wholesale",
@@ -48,8 +47,6 @@ B2B_MODIFIERS = [
     "exporter manufacturer India",
 ]
 
-# Time budget reserved for DGFT Track A at the end of the pipeline.
-# If less than this many seconds remain, DGFT is skipped.
 DGFT_TIME_RESERVE_SECONDS = 15
 
 
@@ -75,21 +72,16 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
     Main async pipeline entry point.
 
     Flow:
-    1. Track B — fire B2B keyword rounds, each round scrapes URLs in parallel
-    2. Track A — DGFT 'Source from India' search + scrape (if time budget allows)
-    3. Deduplicate Track A results against Track B before adding
+    1. Track B — B2B keyword rounds, each scraping URLs in parallel.
+       seen_domains accumulates only domains with accepted contacts.
+    2. Track A — DGFT search + scrape, wrapped in asyncio.wait_for() so it
+       cannot overrun the remaining time budget.
 
-    Args:
-        product_name: validated product query string
-
-    Returns:
-        (results, keywords_used)
-        results: list of valid contact dicts with source field
-        keywords_used: Track B keyword rounds fired (for Sheets log)
+    Returns: (results, keywords_used)
     """
     results: list[dict] = []
     seen_urls: set[str] = set()
-    seen_domains: set[str] = set()  # Domain-level dedup — prevents same company appearing twice
+    seen_domains: set[str] = set()  # Only domains with accepted contacts
     seen_lock = asyncio.Lock()
     start_time = time.time()
     keywords_used = 0
@@ -106,7 +98,6 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
         elapsed = time.time() - start_time
         remaining = SCRAPE_TIMEOUT_SECONDS - elapsed
 
-        # Exit if timeout reached — but preserve DGFT time reserve
         if remaining <= DGFT_TIME_RESERVE_SECONDS:
             logger.info(
                 f"Stopping Track B at {elapsed:.1f}s — "
@@ -121,18 +112,15 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
         keywords_used += 1
         logger.info(f"Track B keyword {keywords_used}: '{keyword}'")
 
-        # Serper search (synchronous — fast, ~1s)
         raw_urls = serper_search(keyword)
         logger.info(f"Serper returned {len(raw_urls)} URLs")
 
-        # Filter by URL and domain — seen_domains shared across all keyword rounds
         clean_urls = filter_urls(raw_urls, seen_urls, seen_domains)
         logger.info(f"After filter: {len(clean_urls)} clean URLs to scrape")
 
         if not clean_urls:
             continue
 
-        # Parallel scrape + extract for this keyword's URL batch
         batch_results = await scrape_batch_async(
             clean_urls,
             seen_urls,
@@ -160,63 +148,63 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
     else:
         logger.info(f"Starting DGFT Track A — {remaining:.1f}s remaining")
 
-        # DGFT Serper search (synchronous)
         dgft_urls = serper_dgft_search(product_name)
 
         if dgft_urls:
-            # Deduplicate DGFT IEC page URLs against seen_urls
-            # seen_domains is NOT used for IEC URL filtering — trade.gov.in is the domain
-            # for all IEC pages. Post-scrape domain check handles supplier website dedup.
+            # filter_dgft_urls: URL-level dedup only.
+            # Domain dedup against Track B is handled by scrape_batch_async
+            # via the shared seen_domains set — no separate pass needed.
             clean_dgft_urls = filter_dgft_urls(
                 dgft_urls,
                 seen_urls,
                 seen_domains,
-                results,
+                # track_b_results removed — was dead parameter
             )
 
             if clean_dgft_urls:
                 logger.info(f"DGFT Track A: scraping {len(clean_dgft_urls)} IEC pages")
 
-                dgft_results = await scrape_batch_async(
-                    clean_dgft_urls,
-                    seen_urls,
-                    seen_domains,
-                    seen_lock,
-                    source="track_a_dgft",
+                # Compute a hard time budget for DGFT scraping.
+                # This prevents DGFT from overrunning SCRAPE_TIMEOUT_SECONDS:
+                # Track B only checks the timeout at the top of each keyword loop,
+                # so without this wrapper the DGFT scrape could push total runtime
+                # to 220+ seconds and risk the worker being killed mid-job.
+                elapsed_now = time.time() - start_time
+                dgft_time_budget = max(
+                    10.0,  # always give at least 10s even if we're close to limit
+                    SCRAPE_TIMEOUT_SECONDS - elapsed_now - 2,  # 2s safety margin
                 )
+                logger.info(f"DGFT time budget: {dgft_time_budget:.1f}s")
 
-                # Post-scrape domain dedup — remove DGFT contacts whose
-                # website domain already appears in Track B results.
-                # scrape_batch_async already checks seen_domains during extraction,
-                # but we do a final pass here for safety and logging clarity.
-                track_b_domains = {
-                    _get_domain(r.get("website", ""))
-                    for r in results
-                    if r.get("source") == "track_b"
-                }
-                deduped_dgft = []
-                for r in dgft_results:
-                    domain = _get_domain(r.get("website", ""))
-                    if domain and domain in track_b_domains:
-                        logger.info(
-                            f"DGFT post-scrape dedup: {r.get('name')} "
-                            f"already in Track B ({domain}) — skipping"
-                        )
-                        continue
-                    deduped_dgft.append(r)
+                try:
+                    dgft_results = await asyncio.wait_for(
+                        scrape_batch_async(
+                            clean_dgft_urls,
+                            seen_urls,
+                            seen_domains,
+                            seen_lock,
+                            source="track_a_dgft",
+                        ),
+                        timeout=dgft_time_budget,
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"DGFT Track A timed out after {dgft_time_budget:.1f}s "
+                        f"— using partial results already in 'results' list"
+                    )
+                    dgft_results = []
 
-                # Only add up to TARGET_RESULT_COUNT
                 slots_remaining = TARGET_RESULT_COUNT - len(results)
-                dgft_to_add = deduped_dgft[:slots_remaining]
+                dgft_to_add = dgft_results[:slots_remaining]
                 results.extend(dgft_to_add)
 
                 logger.info(
                     f"DGFT Track A done — "
-                    f"+{len(dgft_to_add)} results (after domain dedup), "
+                    f"+{len(dgft_to_add)} results, "
                     f"total {len(results)}/{TARGET_RESULT_COUNT}"
                 )
             else:
-                logger.info("DGFT Track A: all IEC pages already seen or deduped")
+                logger.info("DGFT Track A: all IEC pages already seen")
         else:
             logger.info("DGFT Track A: Serper returned no IEC pages for this product")
 

@@ -255,9 +255,9 @@ async def firecrawl_scrape_async(
                     "url": url,
                     "formats": ["markdown"],
                     "onlyMainContent": True,
-                    "timeout": 20000,  # 20s in ms — Firecrawl internal timeout
+                    "timeout": 30000,  # 20s in ms — Firecrawl internal timeout
                 },
-                timeout=30.0,  # httpx timeout — must be > Firecrawl internal
+                timeout=45.0,  # httpx timeout — must be > Firecrawl internal
             )
             resp.raise_for_status()
             data = resp.json()

@@ -5,14 +5,14 @@ Changes in this version:
 - Firecrawl scraping is now ASYNC and PARALLEL (batch endpoint, 5 concurrent max)
 - DGFT Track A: serper_dgft_search() fires site:trade.gov.in queries
 - seen_urls is protected by asyncio.Lock to prevent race conditions
-- Homepage fallback is capped at MAX_FALLBACKS_PER_BATCH (3) per batch
+- Homepage fallback is capped at MAX_FALLBACKS_PER_BATCH (2) per batch
 - source field added to every contact dict ("track_b" or "track_a_dgft")
 
-Still handles:
-- Serper search (Track B — general web)
-- URL deduplication
-- Directory domain filtering
-- Homepage fallback for Track B (capped)
+FIX (Apr 2026): Domain-level deduplication added.
+- filter_urls() now accepts seen_domains set and deduplicates by domain, not just URL
+- scrape_batch_async() now accepts seen_domains set and checks extracted website domain
+  before accepting a contact — prevents same company appearing via deep page + homepage
+- This eliminates the 3-4x duplicate entries (e.g. Urif India, Dhanraj Sugar) seen in output
 """
 
 import asyncio
@@ -137,25 +137,43 @@ def _get_homepage(url: str) -> str | None:
 def _get_domain(url: str) -> str | None:
     """Extract the netloc (domain) from a URL for deduplication."""
     try:
-        return urlparse(url).netloc.lower()
+        parsed = urlparse(url)
+        netloc = parsed.netloc.lower()
+        # Strip www. prefix for consistent domain matching
+        # e.g. www.urifindia.com and urifindia.com are the same company
+        if netloc.startswith("www."):
+            netloc = netloc[4:]
+        return netloc if netloc else None
     except Exception:
         return None
 
 
-def filter_urls(urls: list[str], seen: set[str]) -> list[str]:
+def filter_urls(urls: list[str], seen_urls: set[str], seen_domains: set[str]) -> list[str]:
     """
     Remove duplicates and directory domains from a URL list.
-    Adds surviving URLs to seen set immediately to prevent
-    concurrent batches from picking up the same URL.
+
+    Two-layer deduplication:
+    1. URL-level: exact URL already seen → skip
+    2. Domain-level: same company domain already queued/scraped → skip
+       Prevents urifindia.com/product-page AND urifindia.com/ both entering the queue.
+
+    Adds surviving URLs to seen_urls and their domains to seen_domains immediately
+    to prevent concurrent batches from picking up the same company.
     """
     clean = []
     for url in urls:
-        if url in seen:
+        if url in seen_urls:
             continue
         if _is_directory_url(url):
             continue
+        domain = _get_domain(url)
+        if domain and domain in seen_domains:
+            logger.info(f"Domain dedup (pre-scrape): skipping {url} — domain {domain} already queued")
+            continue
         clean.append(url)
-        seen.add(url)
+        seen_urls.add(url)
+        if domain:
+            seen_domains.add(domain)
     return clean
 
 
@@ -255,7 +273,7 @@ async def firecrawl_scrape_async(
                     "url": url,
                     "formats": ["markdown"],
                     "onlyMainContent": True,
-                    "timeout": 30000,  # 20s in ms — Firecrawl internal timeout
+                    "timeout": 30000,  # 30s in ms — Firecrawl internal timeout
                 },
                 timeout=45.0,  # httpx timeout — must be > Firecrawl internal
             )
@@ -274,11 +292,20 @@ async def firecrawl_scrape_async(
 async def scrape_batch_async(
     urls: list[str],
     seen_urls: set[str],
+    seen_domains: set[str],
     seen_lock: asyncio.Lock,
     source: str = "track_b",
 ) -> list[dict]:
     """
     Scrape a batch of URLs in parallel (up to FIRECRAWL_CONCURRENCY at once).
+
+    Domain deduplication on extracted contacts:
+    After Haiku extracts a contact, we check the extracted website domain against
+    seen_domains. This catches cases where:
+    - A deep page (urifindia.com/castor-sugar) was scraped and passed domain check
+    - But Haiku extracts website = urifindia.com (root domain)
+    - A later batch tries homepage fallback urifindia.com — domain is now in seen_domains
+    This is the post-extraction layer of the two-layer dedup system.
 
     For Track B URLs:
     - Runs homepage fallback if product page fails (capped at MAX_FALLBACKS_PER_BATCH)
@@ -286,7 +313,7 @@ async def scrape_batch_async(
 
     For Track A (DGFT) URLs:
     - No homepage fallback — IEC pages are already the canonical supplier page
-    - Deduplication by domain against seen_urls prevents Track A/B overlap
+    - Deduplication by domain against seen_domains prevents Track A/B overlap
 
     Adds source field to every returned contact dict.
     Returns list of valid contact dicts (may be empty).
@@ -311,14 +338,32 @@ async def scrape_batch_async(
                 if source == "track_b" and _should_attempt_fallback(url):
                     homepage = _get_homepage(url)
                     if homepage:
+                        homepage_domain = _get_domain(homepage)
                         async with seen_lock:
-                            if homepage not in seen_urls:
+                            if homepage not in seen_urls and (
+                                not homepage_domain or homepage_domain not in seen_domains
+                            ):
                                 seen_urls.add(homepage)
+                                if homepage_domain:
+                                    seen_domains.add(homepage_domain)
                                 fallback_needed.append((url, homepage))
                 continue
 
             contact = extract_contact(markdown, url)
             if contact:
+                # Post-extraction domain dedup — check the website Haiku extracted
+                extracted_domain = _get_domain(contact.get("website", ""))
+                async with seen_lock:
+                    if extracted_domain and extracted_domain in seen_domains:
+                        logger.info(
+                            f"Domain dedup (post-extraction): discarding {contact.get('name')} "
+                            f"— domain {extracted_domain} already in results"
+                        )
+                        continue
+                    # Accept this contact and mark domain as seen
+                    if extracted_domain:
+                        seen_domains.add(extracted_domain)
+
                 contact["source"] = source
                 results.append(contact)
                 logger.info(f"[{source}] Contact extracted: {contact.get('name')} from {url}")
@@ -327,9 +372,14 @@ async def scrape_batch_async(
                 if source == "track_b" and _should_attempt_fallback(url):
                     homepage = _get_homepage(url)
                     if homepage:
+                        homepage_domain = _get_domain(homepage)
                         async with seen_lock:
-                            if homepage not in seen_urls:
+                            if homepage not in seen_urls and (
+                                not homepage_domain or homepage_domain not in seen_domains
+                            ):
                                 seen_urls.add(homepage)
+                                if homepage_domain:
+                                    seen_domains.add(homepage_domain)
                                 fallback_needed.append((url, homepage))
 
         # ── PHASE 3: Homepage fallbacks (Track B only, capped) ──────────────
@@ -354,6 +404,17 @@ async def scrape_batch_async(
                     continue
                 contact = extract_contact(markdown, homepage_url)
                 if contact:
+                    extracted_domain = _get_domain(contact.get("website", ""))
+                    async with seen_lock:
+                        if extracted_domain and extracted_domain in seen_domains:
+                            logger.info(
+                                f"Domain dedup (fallback post-extraction): discarding "
+                                f"{contact.get('name')} — domain {extracted_domain} already in results"
+                            )
+                            continue
+                        if extracted_domain:
+                            seen_domains.add(extracted_domain)
+
                     contact["source"] = source
                     results.append(contact)
                     logger.info(
@@ -369,6 +430,7 @@ async def scrape_batch_async(
 def filter_dgft_urls(
     dgft_urls: list[str],
     seen_urls: set[str],
+    seen_domains: set[str],
     track_b_results: list[dict],
 ) -> list[str]:
     """
@@ -377,10 +439,14 @@ def filter_dgft_urls(
     Pre-scrape check (done here):
     - URL already in seen_urls → skip (same IEC page already queued or scraped)
 
+    Note: DGFT IEC page URLs are trade.gov.in paths — their domain is always
+    trade.gov.in and is not added to seen_domains (that would block all DGFT pages).
+    Domain dedup on the *extracted supplier website* is done post-scrape in pipeline.py.
+
     Post-scrape domain check (done in pipeline.py after scraping):
     - We cannot know a supplier's website domain until after the IEC page is scraped.
-    - pipeline.py compares extracted website domains against Track B results
-      before extending the final results list.
+    - pipeline.py compares extracted website domains against seen_domains (which includes
+      all Track B domains) before extending the final results list.
 
     Returns clean list of DGFT IEC page URLs to scrape.
     """

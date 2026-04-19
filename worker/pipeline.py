@@ -9,10 +9,11 @@ Changes in this version:
 - DGFT results deduplicated against Track B results before scraping
 - source field ("track_b" / "track_a_dgft") on every contact dict
 
-Keyword strategy unchanged:
-- B2B modifiers fire first (highest intent)
-- keywords.py suffixes fire as fallback if target not hit
-- DGFT fires once at end as a separate track, not per-keyword
+FIX (Apr 2026): Domain-level deduplication.
+- seen_domains set introduced and passed to all filter_urls() and scrape_batch_async() calls
+- Eliminates duplicate supplier entries caused by same company appearing via multiple URLs
+  (deep product page + homepage fallback + different keyword rounds)
+- seen_domains is stripped of www. prefix for consistent matching (handled in _get_domain)
 """
 
 import asyncio
@@ -88,6 +89,7 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
     """
     results: list[dict] = []
     seen_urls: set[str] = set()
+    seen_domains: set[str] = set()  # Domain-level dedup — prevents same company appearing twice
     seen_lock = asyncio.Lock()
     start_time = time.time()
     keywords_used = 0
@@ -123,8 +125,8 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
         raw_urls = serper_search(keyword)
         logger.info(f"Serper returned {len(raw_urls)} URLs")
 
-        # Filter in main thread — seen_urls not yet async-contested here
-        clean_urls = filter_urls(raw_urls, seen_urls)
+        # Filter by URL and domain — seen_domains shared across all keyword rounds
+        clean_urls = filter_urls(raw_urls, seen_urls, seen_domains)
         logger.info(f"After filter: {len(clean_urls)} clean URLs to scrape")
 
         if not clean_urls:
@@ -134,6 +136,7 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
         batch_results = await scrape_batch_async(
             clean_urls,
             seen_urls,
+            seen_domains,
             seen_lock,
             source="track_b",
         )
@@ -161,11 +164,14 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
         dgft_urls = serper_dgft_search(product_name)
 
         if dgft_urls:
-            # Deduplicate against Track B results and seen_urls
+            # Deduplicate DGFT IEC page URLs against seen_urls
+            # seen_domains is NOT used for IEC URL filtering — trade.gov.in is the domain
+            # for all IEC pages. Post-scrape domain check handles supplier website dedup.
             clean_dgft_urls = filter_dgft_urls(
                 dgft_urls,
                 seen_urls,
-                results,  # pass Track B results for domain dedup
+                seen_domains,
+                results,
             )
 
             if clean_dgft_urls:
@@ -174,13 +180,15 @@ async def run_pipeline(product_name: str) -> tuple[list[dict], int]:
                 dgft_results = await scrape_batch_async(
                     clean_dgft_urls,
                     seen_urls,
+                    seen_domains,
                     seen_lock,
                     source="track_a_dgft",
                 )
 
                 # Post-scrape domain dedup — remove DGFT contacts whose
                 # website domain already appears in Track B results.
-                # Cannot be done pre-scrape — supplier website only known after IEC page scraped.
+                # scrape_batch_async already checks seen_domains during extraction,
+                # but we do a final pass here for safety and logging clarity.
                 track_b_domains = {
                     _get_domain(r.get("website", ""))
                     for r in results

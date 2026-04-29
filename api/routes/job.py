@@ -2,6 +2,11 @@
 api/routes/job.py
 GET /api/job-status?id={order_id}  — polled by result.html every 2 seconds
 GET /api/download?id={order_id}    — streams XLSX from R2 to the browser
+
+FIX (Apr 2026):
+The download/ prefix has a 30-minute R2 lifecycle TTL.
+When that expires, fall back to archive/ (7-day TTL) before returning 410.
+This means users can re-download within 7 days of job completion.
 """
 
 import logging
@@ -58,18 +63,12 @@ async def download_excel(id: str = Query(..., min_length=1)):
 
     Flow:
     1. Verify order exists and payment is paid
-    2. Attempt to fetch bytes directly from R2 (no separate existence check)
-    3. If R2 returns 404/NoSuchKey → file expired, return 410
-    4. Stream response to browser
-    5. Mark download_initiated in Postgres
-    6. Log to Google Sheets Downloads tab
-
-    NOTE: We do NOT delete the R2 download key after download.
-    The 30-minute lifecycle TTL on the download/ prefix handles cleanup automatically.
-    This allows the user to re-download within the 30-minute window.
-
-    NOTE: No separate object_exists() check — we go straight to get_bytes().
-    One R2 call instead of two. ClientError with NoSuchKey = expired.
+    2. Try download/{order_id}.xlsx (30-min TTL, may be expired)
+    3. If expired (NoSuchKey), fall back to archive/{order_id}.xlsx (7-day TTL)
+    4. If both missing, return 410
+    5. Stream response to browser
+    6. Mark download_initiated in Postgres
+    7. Log to Google Sheets Downloads tab
     """
     order_id = id.strip()
 
@@ -87,21 +86,40 @@ async def download_excel(id: str = Query(..., min_length=1)):
     if job_status not in ("done", "partial"):
         raise HTTPException(status_code=404, detail="File not ready")
 
-    # Fetch file bytes directly from R2
-    # If the file doesn't exist (expired TTL), ClientError is raised with NoSuchKey
+    # ── FETCH FROM R2 ─────────────────────────────────────────────────────────
+    # Try download/ first (short TTL). Fall back to archive/ (7-day TTL).
+    # This lets users re-download within 7 days even after the 30-min window.
+    xlsx_bytes = None
     download_key = f"download/{order_id}.xlsx"
+    archive_key  = f"archive/{order_id}.xlsx"
+
     try:
         xlsx_bytes = get_bytes(download_key)
+        logger.info(f"Served from download/: {order_id}")
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "")
         if error_code in ("NoSuchKey", "404"):
-            logger.warning(f"R2 key not found for {order_id} — likely expired")
-            raise HTTPException(
-                status_code=410,
-                detail="Download link has expired. Email admin@verifiedwork.co with your Order ID."
-            )
-        logger.error(f"R2 ClientError for {order_id}: {e}")
-        raise HTTPException(status_code=502, detail="Could not retrieve file")
+            # download/ expired — try archive/
+            logger.info(f"download/ expired for {order_id}, trying archive/")
+            try:
+                xlsx_bytes = get_bytes(archive_key)
+                logger.info(f"Served from archive/: {order_id}")
+            except ClientError as e2:
+                error_code2 = e2.response.get("Error", {}).get("Code", "")
+                if error_code2 in ("NoSuchKey", "404"):
+                    logger.warning(f"Both download/ and archive/ missing for {order_id} — fully expired")
+                    raise HTTPException(
+                        status_code=410,
+                        detail="Download link has expired. Email admin@verifiedwork.co with your Order ID."
+                    )
+                logger.error(f"R2 ClientError on archive/ for {order_id}: {e2}")
+                raise HTTPException(status_code=502, detail="Could not retrieve file")
+            except Exception as e2:
+                logger.error(f"R2 fetch failed on archive/ for {order_id}: {e2}")
+                raise HTTPException(status_code=502, detail="Could not retrieve file")
+        else:
+            logger.error(f"R2 ClientError on download/ for {order_id}: {e}")
+            raise HTTPException(status_code=502, detail="Could not retrieve file")
     except Exception as e:
         logger.error(f"R2 fetch failed for {order_id}: {e}")
         raise HTTPException(status_code=502, detail="Could not retrieve file")

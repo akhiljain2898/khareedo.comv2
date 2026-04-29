@@ -246,15 +246,15 @@
         <div class="order-id" id="order-id-done"></div>
       </div>
 
-      <!-- PARTIAL — no warning symbol, same tone as done state -->
+      <!-- PARTIAL -->
       <div id="state-partial" style="display:none;">
         <span class="status-icon">✅</span>
         <h2>Your supplier list is ready</h2>
-        <p>Download within 30 minutes.</p>
+        <p>Download available for 7 days.</p>
         <div class="result-badge" id="partial-count-badge"></div>
         <br/>
         <a href="#" class="btn btn-primary" id="download-btn-partial">Download Excel →</a>
-        <p class="expiry-note">⚠ Download link expires in 30 minutes</p>
+        <p class="expiry-note">⚠ Download link expires in <span id="countdown-partial">7d 00:00:00</span></p>
         <div class="highlight-box" style="margin-top:1rem;">
           Downloading confirms delivery. Once downloaded, this order is not eligible for a refund.<br/><br/>
           For any issues, email <a href="mailto:admin@verifiedwork.co"><strong>admin@verifiedwork.co</strong></a>
@@ -325,6 +325,7 @@
     });
   }
 
+  // Countdown for state-done (30 min, same as before)
   function startCountdown() {
     countdownTimer = setInterval(() => {
       secondsLeft--;
@@ -333,6 +334,39 @@
       const el = document.getElementById('countdown');
       if (el) el.textContent = m + ':' + s;
       if (secondsLeft <= 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
+
+  // Countdown for state-partial (7 days, matching archive/ TTL on R2)
+  // Disables the download button and shows an expired message when it hits zero.
+  function startCountdownPartial() {
+    let secsLeft = 7 * 24 * 60 * 60;
+    const el  = document.getElementById('countdown-partial');
+    const btn = document.getElementById('download-btn-partial');
+
+    const timer = setInterval(() => {
+      secsLeft--;
+      if (secsLeft <= 0) {
+        clearInterval(timer);
+        if (el) el.textContent = 'EXPIRED';
+        if (btn) {
+          btn.style.pointerEvents = 'none';
+          btn.style.opacity = '0.4';
+          btn.textContent = 'Link expired — email admin@verifiedwork.co';
+          btn.removeAttribute('href');
+        }
+        return;
+      }
+      const days = Math.floor(secsLeft / 86400);
+      const hrs  = Math.floor((secsLeft % 86400) / 3600);
+      const mins = Math.floor((secsLeft % 3600) / 60);
+      const secs = secsLeft % 60;
+      const hStr = String(hrs).padStart(2, '0');
+      const mStr = String(mins).padStart(2, '0');
+      const sStr = String(secs).padStart(2, '0');
+      if (el) el.textContent = days > 0
+        ? days + 'd ' + hStr + ':' + mStr + ':' + sStr
+        : hStr + ':' + mStr + ':' + sStr;
     }, 1000);
   }
 
@@ -348,7 +382,7 @@
   // Eases to ~85% over 180s, never hits 100% until job resolves.
   let progressTimer = null;
   let progressStart = null;
-  const PIPELINE_TIMEOUT = 180; // must match SCRAPE_TIMEOUT_SECONDS in config.py
+  const PIPELINE_TIMEOUT = 180;
 
   function startProgressBar() {
     progressStart = Date.now();
@@ -357,7 +391,6 @@
     if (!fill) return;
     progressTimer = setInterval(() => {
       const elapsed = (Date.now() - progressStart) / 1000;
-      // Ease-out curve: fast early, slows near 85%
       const raw = Math.min(elapsed / PIPELINE_TIMEOUT, 1);
       const pct = Math.min(85, Math.round(100 * (1 - Math.pow(1 - raw, 2.5))));
       fill.style.width = pct + '%';
@@ -393,6 +426,7 @@
           document.getElementById('partial-count-badge').textContent = (data.result_count || '?') + ' suppliers found';
           document.getElementById('download-btn-partial').href = '/api/download?id=' + encodeURIComponent(orderId);
           document.getElementById('order-id-partial').textContent = 'Order ID: ' + orderId;
+          startCountdownPartial();
         } else if (data.status === 'failed') {
           clearInterval(pollTimer);
           completeProgressBar();

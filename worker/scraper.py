@@ -36,6 +36,13 @@ Bug-fix release — changes from previous version:
    Call site in pipeline.py updated to match.
 
 7. Log message: "already has an accepted result" replaces "already in results".
+
+8. FIX 3: filter_urls() no longer checks seen_domains during pre-scrape
+   filtering. Cross-round domain dedup was blocking entire keyword rounds
+   (keyword 4 in palm oil run: 10 URLs → 0 clean because all domains had
+   appeared in rounds 1-3). Domain dedup now happens exclusively at output
+   time inside scrape_batch_async(), where it correctly prevents duplicate
+   contacts in the final result set. seen_urls (URL-level dedup) is unchanged.
 """
 
 import asyncio
@@ -126,6 +133,7 @@ DIRECTORY_DOMAINS = {
     "misefa.com",
     "hyperpure.com",
     "getdistributors.com",
+    "delhiyellowpagesonline.com",
 }
 
 # Platforms that will never have single-supplier contact info on their homepage.
@@ -303,15 +311,24 @@ def filter_urls(urls: list[str], seen_urls: set[str], seen_domains: set[str]) ->
       - Already-queued URLs (seen_urls — URL-level dedup)
       - Directory/aggregator domains
       - Low-value pages (contact, blog, GST, commodity price, etc.)
-      - URLs whose domain already has an accepted contact (seen_domains)
 
-    Domain registration contract:
-    This function does NOT write to seen_domains. Domains are added to
-    seen_domains only in scrape_batch_async() at the moment a contact is
-    accepted. Writing here was the root cause of zero-result runs.
+    FIX 3: seen_domains is NO LONGER checked here. Cross-round domain dedup
+    was the root cause of entire keyword rounds producing 0 clean URLs — in
+    the palm oil run, keyword 4 returned 10 URLs from Serper but 0 passed
+    this filter because all domains had appeared in rounds 1-3, even though
+    those were different pages that could have yielded different contacts.
 
-    seen_urls IS written here — URL-level dedup only, prevents same URL
-    being queued twice across keyword rounds.
+    Domain dedup now happens exclusively at output time inside
+    scrape_batch_async(), where it correctly prevents duplicate contacts
+    in the final result set. A domain only gets blocked once an accepted
+    contact from that domain is already in the output — not merely because
+    that domain appeared in a previous keyword round.
+
+    seen_urls IS still written here — URL-level dedup only, prevents the
+    exact same URL being queued twice across keyword rounds.
+
+    seen_domains is accepted as a parameter to preserve the call signature
+    (pipeline.py passes it in) but is not read inside this function.
     """
     clean = []
     for url in urls:
@@ -322,16 +339,9 @@ def filter_urls(urls: list[str], seen_urls: set[str], seen_domains: set[str]) ->
         if _is_low_value_page(url):
             logger.info(f"Path filter: skipping low-value page {url}")
             continue
-        domain = _get_domain(url)
-        if domain and domain in seen_domains:
-            logger.info(
-                f"Domain dedup (pre-scrape): skipping {url} "
-                f"— domain {domain} already has an accepted result"
-            )
-            continue
         clean.append(url)
         seen_urls.add(url)
-        # DO NOT add to seen_domains here. See contract above.
+        # DO NOT check or add to seen_domains here. See FIX 3 comment above.
     return clean
 
 
@@ -447,6 +457,11 @@ async def scrape_batch_async(
     is accepted. The domain-register + list-append are both inside the lock so
     the operation is atomic — no window where a concurrent coroutine can accept
     a duplicate from the same domain.
+
+    This is the sole location where seen_domains is checked and written.
+    filter_urls() no longer reads seen_domains (FIX 3) — so the same domain
+    can appear in multiple keyword rounds' URL lists, but only the first
+    accepted contact from that domain makes it into the output.
 
     Fallback (Track B only, capped at MAX_FALLBACKS_PER_BATCH):
     If a page returns no content or fails extraction, the homepage is attempted.
